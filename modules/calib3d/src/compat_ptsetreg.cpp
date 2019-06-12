@@ -328,38 +328,41 @@ CV_IMPL int cvRANSACUpdateNumIters( double p, double ep, int modelPoints, int ma
 }
 
 
-CV_IMPL int cvFindHomography( const CvMat* _src, const CvMat* _dst, CvMat* __H, int method,
-                              double ransacReprojThreshold, CvMat* _mask, int maxIters,
-                              double confidence)
+CV_IMPL int cvFindHomography(CvMat const* _src, CvMat const* _dst, CvMat* __H,
+    int method, double ransacReprojThreshold, CvMat* _mask, int maxIters, double confidence)
 {
     cv::Mat src = cv::cvarrToMat(_src), dst = cv::cvarrToMat(_dst);
 
-    if( src.channels() == 1 && (src.rows == 2 || src.rows == 3) && src.cols > 3 )
+    if (src.channels() == 1 && (src.rows == 2 || src.rows == 3) && src.cols > 3)
         cv::transpose(src, src);
-    if( dst.channels() == 1 && (dst.rows == 2 || dst.rows == 3) && dst.cols > 3 )
+
+    if (dst.channels() == 1 && (dst.rows == 2 || dst.rows == 3) && dst.cols > 3)
         cv::transpose(dst, dst);
 
-    if ( maxIters < 0 )
+    if (maxIters < 0)
         maxIters = 0;
-    if ( maxIters > 2000 )
+
+    if (maxIters > 2000)
         maxIters = 2000;
 
-    if ( confidence < 0 )
+    if (confidence < 0)
         confidence = 0;
-    if ( confidence > 1 )
+    if (confidence > 1)
         confidence = 1;
 
-    const cv::Mat H = cv::cvarrToMat(__H), mask = cv::cvarrToMat(_mask);
-    cv::Mat H0 = cv::findHomography(src, dst, method, ransacReprojThreshold,
-                                    _mask ? cv::_OutputArray(mask) : cv::_OutputArray(), maxIters,
-                                    confidence);
+    cv::Mat const H = cv::cvarrToMat(__H);
+    cv::Mat mask = cv::cvarrToMat(_mask);
 
-    if( H0.empty() )
+    cv::Mat H0 = cv::findHomography(src, dst, method, ransacReprojThreshold,
+        _mask ? cv::_OutputArray(mask) : cv::_OutputArray(), maxIters, confidence);
+
+    if (H0.empty())
     {
         cv::Mat Hz = cv::cvarrToMat(__H);
         Hz.setTo(cv::Scalar::all(0));
         return 0;
     }
+
     H0.convertTo(H, H.type());
     return 1;
 }

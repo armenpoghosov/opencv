@@ -68,23 +68,32 @@ inline int signd(const double x)
     return ( x >= 0 ? 1 : -1 );
 }
 
-class HomographyDecomp {
-
+class HomographyDecomp
+{
 public:
-    HomographyDecomp() {}
-    virtual ~HomographyDecomp() {}
-    virtual void decomposeHomography(const cv::Matx33d& H, const cv::Matx33d& K,
-                                     std::vector<CameraMotion>& camMotions);
-    bool isRotationValid(const cv::Matx33d& R,  const double epsilon=0.01);
+
+    HomographyDecomp()
+    {}
+
+    virtual ~HomographyDecomp()
+    {}
+
+    virtual void decomposeHomography(cv::Matx33d const& H,
+        cv::Matx33d const& K, std::vector<CameraMotion>& camMotions);
+
+    bool isRotationValid(cv::Matx33d const& R,  double const epsilon = 0.01);
 
 protected:
+
     bool passesSameSideOfPlaneConstraint(CameraMotion& motion);
+
     virtual void decompose(std::vector<CameraMotion>& camMotions) = 0;
-    const cv::Matx33d& getHnorm() const {
-        return _Hnorm;
-    }
+
+    const cv::Matx33d& getHnorm() const
+        { return _Hnorm; }
 
 private:
+
     /**
      * Normalize the homograhpy \f$H\f$.
      *
@@ -95,29 +104,45 @@ private:
      *   K^{-1} * H * K
      * \f]
      */
+
     cv::Matx33d normalize(const cv::Matx33d& H, const cv::Matx33d& K);
     void removeScale();
+
     cv::Matx33d _Hnorm;
 };
 
-class HomographyDecompZhang CV_FINAL : public HomographyDecomp {
-
+class HomographyDecompZhang CV_FINAL : public HomographyDecomp
+{
 public:
-    HomographyDecompZhang():HomographyDecomp() {}
-    virtual ~HomographyDecompZhang() {}
+
+    HomographyDecompZhang()
+        :
+        HomographyDecomp()
+    {}
+
+    virtual ~HomographyDecompZhang()
+    {}
 
 private:
+
     virtual void decompose(std::vector<CameraMotion>& camMotions) CV_OVERRIDE;
-    bool findMotionFrom_tstar_n(const cv::Vec3d& tstar, const cv::Vec3d& n, CameraMotion& motion);
+    bool findMotionFrom_tstar_n(cv::Vec3d const& tstar, cv::Vec3d const& n, CameraMotion& motion);
 };
 
-class HomographyDecompInria CV_FINAL : public HomographyDecomp {
-
+class HomographyDecompInria CV_FINAL : public HomographyDecomp
+{
 public:
-    HomographyDecompInria():HomographyDecomp() {}
-    virtual ~HomographyDecompInria() {}
+
+    HomographyDecompInria()
+        :
+        HomographyDecomp()
+    {}
+
+    virtual ~HomographyDecompInria()
+    {}
 
 private:
+
     virtual void decompose(std::vector<CameraMotion>& camMotions) CV_OVERRIDE;
     double oppositeOfMinor(const cv::Matx33d& M, const int row, const int col);
     void findRmatFrom_tstar_n(const cv::Vec3d& tstar, const cv::Vec3d& n, const double v, cv::Matx33d& R);
@@ -160,8 +185,8 @@ bool HomographyDecomp::passesSameSideOfPlaneConstraint(CameraMotion& motion)
 }
 
 //!main routine to decompose homography
-void HomographyDecomp::decomposeHomography(const Matx33d& H, const cv::Matx33d& K,
-                                           std::vector<CameraMotion>& camMotions)
+void HomographyDecomp::decomposeHomography(Matx33d const& H,
+    cv::Matx33d const& K, std::vector<CameraMotion>& camMotions)
 {
     //normalize homography matrix with intrinsic camera matrix
     _Hnorm = normalize(H, K);
@@ -452,11 +477,8 @@ void HomographyDecompInria::decompose(std::vector<CameraMotion>& camMotions)
 } //namespace HomographyDecomposition
 
 // function decomposes image-to-image homography to rotation and translation matrices
-int decomposeHomographyMat(InputArray _H,
-                       InputArray _K,
-                       OutputArrayOfArrays _rotations,
-                       OutputArrayOfArrays _translations,
-                       OutputArrayOfArrays _normals)
+int decomposeHomographyMat(InputArray _H, InputArray _K,
+    OutputArrayOfArrays _rotations, OutputArrayOfArrays _translations, OutputArrayOfArrays _normals)
 {
     using namespace std;
     using namespace HomographyDecomposition;
@@ -475,23 +497,32 @@ int decomposeHomographyMat(InputArray _H,
     int nsols = static_cast<int>(motions.size());
     int depth = CV_64F; //double precision matrices used in CameraMotion struct
 
-    if (_rotations.needed()) {
+    if (_rotations.needed())
+    {
         _rotations.create(nsols, 1, depth);
-        for (int k = 0; k < nsols; ++k ) {
+
+        for (int k = 0; k < nsols; ++k)
+        {
             _rotations.getMatRef(k) = Mat(motions[k].R);
         }
     }
 
-    if (_translations.needed()) {
+    if (_translations.needed())
+    {
         _translations.create(nsols, 1, depth);
-        for (int k = 0; k < nsols; ++k ) {
+
+        for (int k = 0; k < nsols; ++k)
+        {
             _translations.getMatRef(k) = Mat(motions[k].t);
         }
     }
 
-    if (_normals.needed()) {
+    if (_normals.needed())
+    {
         _normals.create(nsols, 1, depth);
-        for (int k = 0; k < nsols; ++k ) {
+
+        for (int k = 0; k < nsols; ++k)
+        {
             _normals.getMatRef(k) = Mat(motions[k].n);
         }
     }

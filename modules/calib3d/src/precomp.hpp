@@ -79,16 +79,22 @@ int RANSACUpdateNumIters( double p, double ep, int modelPoints, int maxIters );
 class CV_EXPORTS PointSetRegistrator : public Algorithm
 {
 public:
+
     class CV_EXPORTS Callback
     {
     public:
-        virtual ~Callback() {}
+        virtual ~Callback()
+        {}
+
         virtual int runKernel(InputArray m1, InputArray m2, OutputArray model) const = 0;
+
         virtual void computeError(InputArray m1, InputArray m2, InputArray model, OutputArray err) const = 0;
-        virtual bool checkSubset(InputArray, InputArray, int) const { return true; }
+
+        virtual bool checkSubset(InputArray, InputArray, int) const
+            { return true; }
     };
 
-    virtual void setCallback(const Ptr<PointSetRegistrator::Callback>& cb) = 0;
+    virtual void setCallback(Ptr<PointSetRegistrator::Callback> const& cb) = 0;
     virtual bool run(InputArray m1, InputArray m2, OutputArray model, OutputArray mask) const = 0;
 };
 

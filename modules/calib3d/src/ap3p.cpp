@@ -9,8 +9,11 @@ static inline double cbrt(double x) { return (double)cv::cubeRoot((float)x); };
 
 using namespace std;
 
-namespace {
-void solveQuartic(const double *factors, double *realRoots) {
+namespace
+{
+
+void solveQuartic(const double *factors, double *realRoots)
+{
     const double &a4 = factors[0];
     const double &a3 = factors[1];
     const double &a2 = factors[2];
@@ -125,7 +128,9 @@ inline void mat_mult(const double a[3][3], const double b[3][3], double result[3
 }
 }
 
-namespace cv {
+namespace cv
+{
+
 void ap3p::init_inverse_parameters() {
     inv_fx = 1. / fx;
     inv_fy = 1. / fy;
@@ -325,17 +330,23 @@ int ap3p::computePoses(const double featureVectors[3][4],
     return nb_solutions;
 }
 
-bool ap3p::solve(cv::Mat &R, cv::Mat &tvec, const cv::Mat &opoints, const cv::Mat &ipoints) {
+bool ap3p::solve(cv::Mat &R, cv::Mat &tvec, const cv::Mat &opoints, const cv::Mat &ipoints)
+{
     CV_INSTRUMENT_REGION();
 
-    double rotation_matrix[3][3] = {}, translation[3] = {};
+    double rotation_matrix[3][3] = {};
+    double translation[3] = {};
+
     std::vector<double> points;
-    if (opoints.depth() == ipoints.depth()) {
+
+    if (opoints.depth() == ipoints.depth())
+    {
         if (opoints.depth() == CV_32F)
             extract_points<cv::Point3f, cv::Point2f>(opoints, ipoints, points);
         else
             extract_points<cv::Point3d, cv::Point2d>(opoints, ipoints, points);
-    } else if (opoints.depth() == CV_32F)
+    }
+    else if (opoints.depth() == CV_32F)
         extract_points<cv::Point3f, cv::Point2d>(opoints, ipoints, points);
     else
         extract_points<cv::Point3d, cv::Point2f>(opoints, ipoints, points);
@@ -345,8 +356,10 @@ bool ap3p::solve(cv::Mat &R, cv::Mat &tvec, const cv::Mat &opoints, const cv::Ma
                         points[5], points[6], points[7], points[8], points[9],
                         points[10], points[11], points[12], points[13],points[14],
                         points[15], points[16], points[17], points[18], points[19]);
+
     cv::Mat(3, 1, CV_64F, translation).copyTo(tvec);
     cv::Mat(3, 3, CV_64F, rotation_matrix).copyTo(R);
+
     return result;
 }
 

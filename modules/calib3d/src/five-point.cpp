@@ -599,7 +599,8 @@ int cv::recoverPose( InputArray E, InputArray _points1, InputArray _points2,
         if (_mask.needed()) mask1.copyTo(_mask);
         return good1;
     }
-    else if (good2 >= good1 && good2 >= good3 && good2 >= good4)
+
+    if (good2 >= good1 && good2 >= good3 && good2 >= good4)
     {
         if(triangulatedPoints.needed()) allTriangulations[1].copyTo(triangulatedPoints);
         R2.copyTo(_R);
@@ -607,7 +608,8 @@ int cv::recoverPose( InputArray E, InputArray _points1, InputArray _points2,
         if (_mask.needed()) mask2.copyTo(_mask);
         return good2;
     }
-    else if (good3 >= good1 && good3 >= good2 && good3 >= good4)
+
+    if (good3 >= good1 && good3 >= good2 && good3 >= good4)
     {
         if(triangulatedPoints.needed()) allTriangulations[2].copyTo(triangulatedPoints);
         t = -t;
@@ -616,15 +618,15 @@ int cv::recoverPose( InputArray E, InputArray _points1, InputArray _points2,
         if (_mask.needed()) mask3.copyTo(_mask);
         return good3;
     }
-    else
-    {
-        if(triangulatedPoints.needed()) allTriangulations[3].copyTo(triangulatedPoints);
-        t = -t;
-        R2.copyTo(_R);
-        t.copyTo(_t);
-        if (_mask.needed()) mask4.copyTo(_mask);
-        return good4;
-    }
+
+    if (triangulatedPoints.needed())
+        allTriangulations[3].copyTo(triangulatedPoints);
+    t = -t;
+    R2.copyTo(_R);
+    t.copyTo(_t);
+    if (_mask.needed())
+        mask4.copyTo(_mask);
+    return good4;
 }
 
 int cv::recoverPose( InputArray E, InputArray _points1, InputArray _points2, InputArray _cameraMatrix,
@@ -640,7 +642,7 @@ int cv::recoverPose( InputArray E, InputArray _points1, InputArray _points2, Out
     return cv::recoverPose(E, _points1, _points2, cameraMatrix, _R, _t, _mask);
 }
 
-void cv::decomposeEssentialMat( InputArray _E, OutputArray _R1, OutputArray _R2, OutputArray _t )
+void cv::decomposeEssentialMat(InputArray _E, OutputArray _R1, OutputArray _R2, OutputArray _t)
 {
     CV_INSTRUMENT_REGION();
 

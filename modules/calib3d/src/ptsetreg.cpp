@@ -50,9 +50,9 @@
 namespace cv
 {
 
-int RANSACUpdateNumIters( double p, double ep, int modelPoints, int maxIters )
+int RANSACUpdateNumIters(double p, double ep, int modelPoints, int maxIters)
 {
-    if( modelPoints <= 0 )
+    if (modelPoints <= 0)
         CV_Error( Error::StsOutOfRange, "the number of model points should be positive" );
 
     p = MAX(p, 0.);
@@ -76,13 +76,21 @@ int RANSACUpdateNumIters( double p, double ep, int modelPoints, int maxIters )
 class RANSACPointSetRegistrator : public PointSetRegistrator
 {
 public:
-    RANSACPointSetRegistrator(const Ptr<PointSetRegistrator::Callback>& _cb=Ptr<PointSetRegistrator::Callback>(),
-                              int _modelPoints=0, double _threshold=0, double _confidence=0.99, int _maxIters=1000)
-      : cb(_cb), modelPoints(_modelPoints), threshold(_threshold), confidence(_confidence), maxIters(_maxIters) {}
+
+    RANSACPointSetRegistrator(Ptr<PointSetRegistrator::Callback> const& _cb = Ptr<PointSetRegistrator::Callback>(),
+            int _modelPoints = 0, double _threshold = 0, double _confidence = 0.99, int _maxIters = 1000)
+        :
+        cb(_cb),
+        modelPoints(_modelPoints),
+        threshold(_threshold),
+        confidence(_confidence),
+        maxIters(_maxIters)
+    {}
 
     int findInliers( const Mat& m1, const Mat& m2, const Mat& model, Mat& err, Mat& mask, double thresh ) const
     {
-        cb->computeError( m1, m2, model, err );
+        cb->computeError(m1, m2, model, err);
+
         mask.create(err.size(), CV_8U);
 
         CV_Assert( err.isContinuous() && err.type() == CV_32F && mask.isContinuous() && mask.type() == CV_8U);
@@ -248,11 +256,11 @@ public:
 
     void setCallback(const Ptr<PointSetRegistrator::Callback>& _cb) CV_OVERRIDE { cb = _cb; }
 
-    Ptr<PointSetRegistrator::Callback> cb;
-    int modelPoints;
-    double threshold;
-    double confidence;
-    int maxIters;
+    Ptr<PointSetRegistrator::Callback>  cb;
+    int                                 modelPoints;
+    double                              threshold;
+    double                              confidence;
+    int                                 maxIters;
 };
 
 class LMeDSPointSetRegistrator : public RANSACPointSetRegistrator

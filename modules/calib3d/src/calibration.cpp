@@ -1104,8 +1104,11 @@ CV_IMPL void cvFindExtrinsicCameraParams2( const CvMat* objectPoints,
     else
     {
         Mc = cvAvg(matM);
+
         cvReshape( matM, matM, 1, count );
+
         cvMulTransposed( matM, &_MM, 1, &_Mc );
+
         cvSVD( &_MM, &matW, 0, &matV, CV_SVD_MODIFY_A + CV_SVD_V_T );
 
         // initialize extrinsic parameters

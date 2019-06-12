@@ -349,14 +349,18 @@ static bool runAndSave(const string& outputFilename,
 
 int main( int argc, char** argv )
 {
-    Size boardSize, imageSize;
-    float squareSize, aspectRatio = 1;
-    Mat cameraMatrix, distCoeffs;
+    Size boardSize;
+    Size imageSize;
+    float squareSize;
+    float aspectRatio = 1;
+    Mat cameraMatrix;
+    Mat distCoeffs;
     string outputFilename;
     string inputFilename = "";
-
-    int i, nframes;
-    bool writeExtrinsics, writePoints;
+    int i;
+    int nframes;
+    bool writeExtrinsics;
+    bool writePoints;
     bool undistortImage = false;
     int flags = 0;
     VideoCapture capture;
@@ -376,77 +380,99 @@ int main( int argc, char** argv )
         "{op||}{oe||}{zt||}{a||}{p||}{v||}{V||}{su||}"
         "{oo||}{ws|11|}{dt||}"
         "{@input_data|0|}");
+
     if (parser.has("help"))
     {
         help();
         return 0;
     }
-    boardSize.width = parser.get<int>( "w" );
-    boardSize.height = parser.get<int>( "h" );
-    if ( parser.has("pt") )
+
+    boardSize.width = parser.get<int>("w");
+    boardSize.height = parser.get<int>("h");
+
+    if (parser.has("pt"))
     {
         string val = parser.get<string>("pt");
-        if( val == "circles" )
+        if (val == "circles")
             pattern = CIRCLES_GRID;
-        else if( val == "acircles" )
+        else if (val == "acircles")
             pattern = ASYMMETRIC_CIRCLES_GRID;
-        else if( val == "chessboard" )
+        else if (val == "chessboard")
             pattern = CHESSBOARD;
         else
             return fprintf( stderr, "Invalid pattern type: must be chessboard or circles\n" ), -1;
     }
+
     squareSize = parser.get<float>("s");
     nframes = parser.get<int>("n");
     delay = parser.get<int>("d");
     writePoints = parser.has("op");
     writeExtrinsics = parser.has("oe");
     bool writeGrid = parser.has("oo");
-    if (parser.has("a")) {
+
+    if (parser.has("a"))
+    {
         flags |= CALIB_FIX_ASPECT_RATIO;
         aspectRatio = parser.get<float>("a");
     }
-    if ( parser.has("zt") )
+
+    if (parser.has("zt"))
         flags |= CALIB_ZERO_TANGENT_DIST;
-    if ( parser.has("p") )
+
+    if (parser.has("p"))
         flags |= CALIB_FIX_PRINCIPAL_POINT;
+
     flipVertical = parser.has("v");
     videofile = parser.has("V");
-    if ( parser.has("o") )
+
+    if (parser.has("o"))
         outputFilename = parser.get<string>("o");
+
     showUndistorted = parser.has("su");
-    if ( isdigit(parser.get<string>("@input_data")[0]) )
+
+    if (isdigit(parser.get<string>("@input_data")[0]))
         cameraId = parser.get<int>("@input_data");
     else
         inputFilename = parser.get<string>("@input_data");
+
     int winSize = parser.get<int>("ws");
     float grid_width = squareSize * (boardSize.width - 1);
     bool release_object = false;
-    if (parser.has("dt")) {
+
+    if (parser.has("dt"))
+    {
         grid_width = parser.get<float>("dt");
         release_object = true;
     }
+
     if (!parser.check())
     {
         help();
         parser.printErrors();
         return -1;
     }
-    if ( squareSize <= 0 )
+
+    if (squareSize <= 0)
         return fprintf( stderr, "Invalid board square width\n" ), -1;
-    if ( nframes <= 3 )
+
+    if (nframes <= 3)
         return printf("Invalid number of images\n" ), -1;
-    if ( aspectRatio <= 0 )
+
+    if (aspectRatio <= 0)
         return printf( "Invalid aspect ratio\n" ), -1;
-    if ( delay <= 0 )
+
+    if (delay <= 0)
         return printf( "Invalid delay\n" ), -1;
-    if ( boardSize.width <= 0 )
+
+    if (boardSize.width <= 0)
         return fprintf( stderr, "Invalid board width\n" ), -1;
-    if ( boardSize.height <= 0 )
+
+    if (boardSize.height <= 0)
         return fprintf( stderr, "Invalid board height\n" ), -1;
 
-    if( !inputFilename.empty() )
+    if (!inputFilename.empty())
     {
-        if( !videofile && readStringList(samples::findFile(inputFilename), imageList) )
+        if (!videofile && readStringList(samples::findFile(inputFilename), imageList))
             mode = CAPTURING;
         else
             capture.open(samples::findFileOrKeep(inputFilename));
@@ -454,34 +480,34 @@ int main( int argc, char** argv )
     else
         capture.open(cameraId);
 
-    if( !capture.isOpened() && imageList.empty() )
+    if (!capture.isOpened() && imageList.empty())
         return fprintf( stderr, "Could not initialize video (%d) capture\n",cameraId ), -2;
 
-    if( !imageList.empty() )
+    if (!imageList.empty())
         nframes = (int)imageList.size();
 
-    if( capture.isOpened() )
-        printf( "%s", liveCaptureHelp );
+    if (capture.isOpened())
+        printf( "%s", liveCaptureHelp);
 
-    namedWindow( "Image View", 1 );
+    namedWindow("Image View", 1);
 
-    for(i = 0;;i++)
+    for (i = 0; ; ++i)
     {
         Mat view, viewGray;
         bool blink = false;
 
-        if( capture.isOpened() )
+        if (capture.isOpened())
         {
             Mat view0;
             capture >> view0;
             view0.copyTo(view);
         }
-        else if( i < (int)imageList.size() )
+        else if (i < (int)imageList.size())
             view = imread(imageList[i], 1);
 
-        if(view.empty())
+        if (view.empty())
         {
-            if( imagePoints.size() > 0 )
+            if (imagePoints.size() > 0)
                 runAndSave(outputFilename, imagePoints, imageSize,
                            boardSize, pattern, squareSize, grid_width, release_object, aspectRatio,
                            flags, cameraMatrix, distCoeffs,
@@ -491,7 +517,7 @@ int main( int argc, char** argv )
 
         imageSize = view.size();
 
-        if( flipVertical )
+        if (flipVertical)
             flip( view, view, 0 );
 
         vector<Point2f> pointbuf;
@@ -500,33 +526,34 @@ int main( int argc, char** argv )
         bool found;
         switch( pattern )
         {
-            case CHESSBOARD:
-                found = findChessboardCorners( view, boardSize, pointbuf,
-                    CALIB_CB_ADAPTIVE_THRESH | CALIB_CB_FAST_CHECK | CALIB_CB_NORMALIZE_IMAGE);
-                break;
-            case CIRCLES_GRID:
-                found = findCirclesGrid( view, boardSize, pointbuf );
-                break;
-            case ASYMMETRIC_CIRCLES_GRID:
-                found = findCirclesGrid( view, boardSize, pointbuf, CALIB_CB_ASYMMETRIC_GRID );
-                break;
-            default:
-                return fprintf( stderr, "Unknown pattern type\n" ), -1;
+        case CHESSBOARD:
+            found = findChessboardCorners( view, boardSize, pointbuf,
+                CALIB_CB_ADAPTIVE_THRESH | CALIB_CB_FAST_CHECK | CALIB_CB_NORMALIZE_IMAGE);
+        break;
+        case CIRCLES_GRID:
+            found = findCirclesGrid( view, boardSize, pointbuf );
+        break;
+        case ASYMMETRIC_CIRCLES_GRID:
+            found = findCirclesGrid( view, boardSize, pointbuf, CALIB_CB_ASYMMETRIC_GRID );
+        break;
+        default:
+        return fprintf( stderr, "Unknown pattern type\n" ), -1;
         }
 
        // improve the found corners' coordinate accuracy
-        if( pattern == CHESSBOARD && found) cornerSubPix( viewGray, pointbuf, Size(winSize,winSize),
-            Size(-1,-1), TermCriteria( TermCriteria::EPS+TermCriteria::COUNT, 30, 0.0001 ));
+        if (pattern == CHESSBOARD && found)
+            cornerSubPix(viewGray, pointbuf, Size(winSize, winSize),
+                Size(-1,-1), TermCriteria( TermCriteria::EPS + TermCriteria::COUNT, 30, 0.0001 ));
 
-        if( mode == CAPTURING && found &&
-           (!capture.isOpened() || clock() - prevTimestamp > delay*1e-3*CLOCKS_PER_SEC) )
+        if (mode == CAPTURING && found &&
+            (!capture.isOpened() || clock() - prevTimestamp > delay * 1e-3 * CLOCKS_PER_SEC))
         {
             imagePoints.push_back(pointbuf);
             prevTimestamp = clock();
             blink = capture.isOpened();
         }
 
-        if(found)
+        if (found)
             drawChessboardCorners( view, boardSize, Mat(pointbuf), found );
 
         string msg = mode == CAPTURING ? "100/100" :

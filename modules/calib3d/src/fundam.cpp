@@ -384,32 +384,36 @@ cv::Mat cv::findHomography( InputArray _points1, InputArray _points2,
 
     Ptr<PointSetRegistrator::Callback> cb = makePtr<HomographyEstimatorCallback>();
 
-    if( method == 0 || npoints == 4 )
+    if (method == 0 || npoints == 4)
     {
         tempMask = Mat::ones(npoints, 1, CV_8U);
         result = cb->runKernel(src, dst, H) > 0;
     }
-    else if( method == RANSAC )
+    else if (method == RANSAC)
         result = createRANSACPointSetRegistrator(cb, 4, ransacReprojThreshold, confidence, maxIters)->run(src, dst, H, tempMask);
-    else if( method == LMEDS )
+    else if (method == LMEDS)
         result = createLMeDSPointSetRegistrator(cb, 4, confidence, maxIters)->run(src, dst, H, tempMask);
-    else if( method == RHO )
+    else if (method == RHO)
         result = createAndRunRHORegistrator(confidence, maxIters, ransacReprojThreshold, npoints, src, dst, H, tempMask);
     else
         CV_Error(Error::StsBadArg, "Unknown estimation method");
 
     if( result && npoints > 4 && method != RHO)
     {
-        compressElems( src.ptr<Point2f>(), tempMask.ptr<uchar>(), 1, npoints );
-        npoints = compressElems( dst.ptr<Point2f>(), tempMask.ptr<uchar>(), 1, npoints );
-        if( npoints > 0 )
+        compressElems(src.ptr<Point2f>(), tempMask.ptr<uchar>(), 1, npoints);
+
+        npoints = compressElems(dst.ptr<Point2f>(), tempMask.ptr<uchar>(), 1, npoints);
+        if (npoints > 0)
         {
             Mat src1 = src.rowRange(0, npoints);
             Mat dst1 = dst.rowRange(0, npoints);
+
             src = src1;
             dst = dst1;
-            if( method == RANSAC || method == LMEDS )
-                cb->runKernel( src, dst, H );
+
+            if (method == RANSAC || method == LMEDS)
+                cb->runKernel(src, dst, H);
+
             Mat H8(8, 1, CV_64F, H.ptr<double>());
             LMSolver::create(makePtr<HomographyRefineCallback>(src, dst), 10)->run(H8);
         }

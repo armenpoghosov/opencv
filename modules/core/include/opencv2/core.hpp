@@ -3074,16 +3074,19 @@ Here is example of SimpleBlobDetector use in your application via Algorithm inte
 class CV_EXPORTS_W Algorithm
 {
 public:
+
     Algorithm();
     virtual ~Algorithm();
 
     /** @brief Clears the algorithm state
     */
-    CV_WRAP virtual void clear() {}
+    CV_WRAP virtual void clear()
+    {}
 
     /** @brief Stores algorithm parameters in a file storage
     */
-    virtual void write(FileStorage& fs) const { CV_UNUSED(fs); }
+    virtual void write(FileStorage& fs) const
+        { CV_UNUSED(fs); }
 
     /** @brief simplified API for language bindings
     * @overload
@@ -3092,11 +3095,13 @@ public:
 
     /** @brief Reads algorithm parameters from a file storage
     */
-    CV_WRAP virtual void read(const FileNode& fn) { CV_UNUSED(fn); }
+    CV_WRAP virtual void read(const FileNode& fn)
+        { CV_UNUSED(fn); }
 
     /** @brief Returns true if the Algorithm is empty (e.g. in the very beginning or after unsuccessful read
     */
-    CV_WRAP virtual bool empty() const { return false; }
+    CV_WRAP virtual bool empty() const
+        { return false; }
 
     /** @brief Reads algorithm from the file node
 
@@ -3170,7 +3175,8 @@ protected:
     void writeFormat(FileStorage& fs) const;
 };
 
-enum struct Param {
+enum struct Param
+{
     INT=0, BOOLEAN=1, REAL=2, STRING=3, MAT=4, MAT_VECTOR=5, ALGORITHM=6, FLOAT=7,
     UNSIGNED_INT=8, UINT64=9, UCHAR=11, SCALAR=12
 };

@@ -15,33 +15,30 @@
 using namespace cv;
 using namespace std;
 
-const char * usage =
-" \nexample command line for calibration from a live feed.\n"
-"   calibration  -w=4 -h=5 -s=0.025 -o=camera.yml -op -oe\n"
-" \n"
-" example command line for calibration from a list of stored images:\n"
-"   imagelist_creator image_list.xml *.png\n"
-"   calibration -w=4 -h=5 -s=0.025 -o=camera.yml -op -oe image_list.xml\n"
-" where image_list.xml is the standard OpenCV XML/YAML\n"
-" use imagelist_creator to create the xml or yaml list\n"
-" file consisting of the list of strings, e.g.:\n"
-" \n"
-"<?xml version=\"1.0\"?>\n"
-"<opencv_storage>\n"
-"<images>\n"
-"view000.png\n"
-"view001.png\n"
-"<!-- view002.png -->\n"
-"view003.png\n"
-"view010.png\n"
-"one_extra_view.jpg\n"
-"</images>\n"
-"</opencv_storage>\n";
+char const* const usage =
+    " \nexample command line for calibration from a live feed.\n"
+    "   calibration  -w=4 -h=5 -s=0.025 -o=camera.yml -op -oe\n"
+    " \n"
+    " example command line for calibration from a list of stored images:\n"
+    "   imagelist_creator image_list.xml *.png\n"
+    "   calibration -w=4 -h=5 -s=0.025 -o=camera.yml -op -oe image_list.xml\n"
+    " where image_list.xml is the standard OpenCV XML/YAML\n"
+    " use imagelist_creator to create the xml or yaml list\n"
+    " file consisting of the list of strings, e.g.:\n"
+    " \n"
+    "<?xml version=\"1.0\"?>\n"
+    "<opencv_storage>\n"
+    "<images>\n"
+    "view000.png\n"
+    "view001.png\n"
+    "<!-- view002.png -->\n"
+    "view003.png\n"
+    "view010.png\n"
+    "one_extra_view.jpg\n"
+    "</images>\n"
+    "</opencv_storage>\n";
 
-
-
-
-const char* liveCaptureHelp =
+char const* const liveCaptureHelp =
     "When the live video from camera is used as input, the following hot-keys may be used:\n"
         "  <ESC>, 'q' - quit the program\n"
         "  'g' - start capturing images\n"
@@ -49,7 +46,8 @@ const char* liveCaptureHelp =
 
 static void help()
 {
-    printf( "This is a camera calibration sample.\n"
+    printf(
+        "This is a camera calibration sample.\n"
         "Usage: calibration\n"
         "     -w=<board_width>         # the number of inner corners per one of board dimension\n"
         "     -h=<board_height>        # the number of inner corners per another board dimension\n"
@@ -82,19 +80,31 @@ static void help()
         "                              #  - name of video file with a video of the board\n"
         "                              # if input_data not specified, a live view from the camera is used\n"
         "\n" );
-    printf("\n%s",usage);
-    printf( "\n%s", liveCaptureHelp );
+
+    printf("\n%s", usage);
+    printf( "\n%s", liveCaptureHelp);
 }
 
-enum { DETECTION = 0, CAPTURING = 1, CALIBRATED = 2 };
-enum Pattern { CHESSBOARD, CIRCLES_GRID, ASYMMETRIC_CIRCLES_GRID };
+enum
+{
+    DETECTION = 0,
+    CAPTURING = 1,
+    CALIBRATED = 2
+};
+
+enum Pattern
+{
+    CHESSBOARD,
+    CIRCLES_GRID,
+    ASYMMETRIC_CIRCLES_GRID
+};
 
 static double computeReprojectionErrors(
-        const vector<vector<Point3f> >& objectPoints,
-        const vector<vector<Point2f> >& imagePoints,
-        const vector<Mat>& rvecs, const vector<Mat>& tvecs,
-        const Mat& cameraMatrix, const Mat& distCoeffs,
-        vector<float>& perViewErrors )
+    const vector<vector<Point3f> >& objectPoints,
+    const vector<vector<Point2f> >& imagePoints,
+    const vector<Mat>& rvecs, const vector<Mat>& tvecs,
+    const Mat& cameraMatrix, const Mat& distCoeffs,
+    vector<float>& perViewErrors )
 {
     vector<Point2f> imagePoints2;
     int i, totalPoints = 0;

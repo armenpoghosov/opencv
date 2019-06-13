@@ -1022,36 +1022,43 @@ void cv::convertPointsFromHomogeneous( InputArray _src, OutputArray _dst )
 }
 
 
-void cv::convertPointsToHomogeneous( InputArray _src, OutputArray _dst )
+void cv::convertPointsToHomogeneous(InputArray _src, OutputArray _dst)
 {
     CV_INSTRUMENT_REGION();
 
     Mat src = _src.getMat();
-    if( !src.isContinuous() )
+    if (!src.isContinuous())
         src = src.clone();
-    int i, npoints = src.checkVector(2), depth = src.depth(), cn = 2;
-    if( npoints < 0 )
+
+    int i;
+    int npoints = src.checkVector(2);
+    int depth = src.depth();
+    int cn = 2;
+
+    if (npoints < 0)
     {
         npoints = src.checkVector(3);
         CV_Assert(npoints >= 0);
         cn = 3;
     }
-    CV_Assert( npoints >= 0 && (depth == CV_32S || depth == CV_32F || depth == CV_64F));
 
-    int dtype = CV_MAKETYPE(depth, cn+1);
+    CV_Assert(npoints >= 0 && (depth == CV_32S || depth == CV_32F || depth == CV_64F));
+
+    int dtype = CV_MAKETYPE(depth, cn + 1);
     _dst.create(npoints, 1, dtype);
+
     Mat dst = _dst.getMat();
-    if( !dst.isContinuous() )
+    if (!dst.isContinuous())
     {
         _dst.release();
         _dst.create(npoints, 1, dtype);
         dst = _dst.getMat();
     }
-    CV_Assert( dst.isContinuous() );
+    CV_Assert(dst.isContinuous());
 
-    if( depth == CV_32S )
+    if (depth == CV_32S)
     {
-        if( cn == 2 )
+        if (cn == 2)
         {
             const Point2i* sptr = src.ptr<Point2i>();
             Point3i* dptr = dst.ptr<Point3i>();
@@ -1105,14 +1112,15 @@ void cv::convertPointsToHomogeneous( InputArray _src, OutputArray _dst )
 }
 
 
-void cv::convertPointsHomogeneous( InputArray _src, OutputArray _dst )
+void cv::convertPointsHomogeneous(InputArray _src, OutputArray _dst)
 {
     CV_INSTRUMENT_REGION();
 
-    int stype = _src.type(), dtype = _dst.type();
-    CV_Assert( _dst.fixedType() );
+    int stype = _src.type();
+    int dtype = _dst.type();
+    CV_Assert(_dst.fixedType());
 
-    if( CV_MAT_CN(stype) > CV_MAT_CN(dtype) )
+    if (CV_MAT_CN(stype) > CV_MAT_CN(dtype))
         convertPointsFromHomogeneous(_src, _dst);
     else
         convertPointsToHomogeneous(_src, _dst);

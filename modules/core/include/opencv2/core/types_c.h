@@ -461,19 +461,19 @@ CV_MAT_ELEM(matrix, type, i, j\*nchannels + channel_idx).
  */
 typedef struct CvMat
 {
-    int type;
-    int step;
+    int     type;
+    int     step;
 
     /* for internal use only */
-    int* refcount;
-    int hdr_refcount;
+    int*    refcount;
+    int     hdr_refcount;
 
     union
     {
-        uchar* ptr;
-        short* s;
-        int* i;
-        float* fl;
+        uchar*  ptr;
+        short*  s;
+        int*    i;
+        float*  fl;
         double* db;
     } data;
 

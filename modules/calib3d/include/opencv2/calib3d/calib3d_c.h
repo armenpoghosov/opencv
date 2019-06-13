@@ -93,7 +93,7 @@ enum
 #define CV_CALIB_FIX_TAUX_TAUY  524288
 #define CV_CALIB_FIX_TANGENT_DIST 2097152
 
-#define CV_CALIB_NINTRINSIC 18
+#define CV_CALIB_NINTRINSIC     18
 
 #define CV_CALIB_FIX_INTRINSIC  256
 #define CV_CALIB_SAME_FOCAL_LENGTH 512
@@ -108,41 +108,53 @@ enum
 } // extern "C"
 
 //////////////////////////////////////////////////////////////////////////////////////////
+
 class CV_EXPORTS CvLevMarq
 {
 public:
+
     CvLevMarq();
-    CvLevMarq( int nparams, int nerrs, CvTermCriteria criteria=
-              cvTermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER,30,DBL_EPSILON),
-              bool completeSymmFlag=false );
+    CvLevMarq(int nparams, int nerrs,
+        CvTermCriteria criteria = cvTermCriteria(CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 30, DBL_EPSILON),
+        bool completeSymmFlag = false);
     ~CvLevMarq();
-    void init( int nparams, int nerrs, CvTermCriteria criteria=
-              cvTermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER,30,DBL_EPSILON),
-              bool completeSymmFlag=false );
-    bool update( const CvMat*& param, CvMat*& J, CvMat*& err );
-    bool updateAlt( const CvMat*& param, CvMat*& JtJ, CvMat*& JtErr, double*& errNorm );
+
+    void init(int nparams, int nerrs,
+        CvTermCriteria criteria = cvTermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER,30,DBL_EPSILON),
+        bool completeSymmFlag = false);
+
+    bool update(CvMat const*& param, CvMat*& J, CvMat*& err);
+    bool updateAlt(CvMat const*& param, CvMat*& JtJ, CvMat*& JtErr, double*& errNorm);
 
     void clear();
     void step();
-    enum { DONE=0, STARTED=1, CALC_J=2, CHECK_ERR=3 };
 
-    cv::Ptr<CvMat> mask;
-    cv::Ptr<CvMat> prevParam;
-    cv::Ptr<CvMat> param;
-    cv::Ptr<CvMat> J;
-    cv::Ptr<CvMat> err;
-    cv::Ptr<CvMat> JtJ;
-    cv::Ptr<CvMat> JtJN;
-    cv::Ptr<CvMat> JtErr;
-    cv::Ptr<CvMat> JtJV;
-    cv::Ptr<CvMat> JtJW;
-    double prevErrNorm, errNorm;
-    int lambdaLg10;
-    CvTermCriteria criteria;
-    int state;
-    int iters;
-    bool completeSymmFlag;
-    int solveMethod;
+    enum
+    {
+        DONE        = 0,
+        STARTED     = 1,
+        CALC_J      = 2,
+        CHECK_ERR   = 3
+    };
+
+    cv::Ptr<CvMat>  mask;
+    cv::Ptr<CvMat>  prevParam;
+    cv::Ptr<CvMat>  param;
+    cv::Ptr<CvMat>  J;
+    cv::Ptr<CvMat>  err;
+    cv::Ptr<CvMat>  JtJ;
+    cv::Ptr<CvMat>  JtJN;
+    cv::Ptr<CvMat>  JtErr;
+    cv::Ptr<CvMat>  JtJV;
+    cv::Ptr<CvMat>  JtJW;
+    double          prevErrNorm;
+    double          errNorm;
+    int             lambdaLg10;
+    CvTermCriteria  criteria;
+    int             state;
+    int             iters;
+    bool            completeSymmFlag;
+    int             solveMethod;
 };
 
 #endif

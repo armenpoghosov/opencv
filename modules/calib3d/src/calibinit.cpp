@@ -277,17 +277,18 @@ public:
 /***************************************************************************************************/
 //COMPUTE INTENSITY HISTOGRAM OF INPUT IMAGE
 template<typename ArrayContainer>
-static void icvGetIntensityHistogram256(const Mat& img, ArrayContainer& piHist)
+static void icvGetIntensityHistogram256(Mat const& img, ArrayContainer& piHist)
 {
-    for (int i = 0; i < 256; i++)
+    for (int i = 0; i < 256; ++i)
         piHist[i] = 0;
+
     // sum up all pixel in row direction and divide by number of columns
     for (int j = 0; j < img.rows; ++j)
     {
-        const uchar* row = img.ptr<uchar>(j);
-        for (int i = 0; i < img.cols; i++)
+        uchar const* row = img.ptr<uchar>(j);
+        for (int i = 0; i < img.cols; ++i)
         {
-            piHist[row[i]]++;
+            ++piHist[row[i]];
         }
     }
 }
@@ -297,21 +298,26 @@ template<int iWidth_, typename ArrayContainer>
 static void icvSmoothHistogram256(const ArrayContainer& piHist, ArrayContainer& piHistSmooth, int iWidth = 0)
 {
     CV_DbgAssert(iWidth_ == 0 || (iWidth == iWidth_ || iWidth == 0));
+
     iWidth = (iWidth_ != 0) ? iWidth_ : iWidth;
     CV_Assert(iWidth > 0);
+
     CV_DbgAssert(piHist.size() == 256);
     CV_DbgAssert(piHistSmooth.size() == 256);
+
     for (int i = 0; i < 256; ++i)
     {
         int iIdx_min = std::max(0, i - iWidth);
         int iIdx_max = std::min(255, i + iWidth);
+
         int iSmooth = 0;
         for (int iIdx = iIdx_min; iIdx <= iIdx_max; ++iIdx)
         {
             CV_DbgAssert(iIdx >= 0 && iIdx < 256);
             iSmooth += piHist[iIdx];
         }
-        piHistSmooth[i] = iSmooth/(2*iWidth+1);
+
+        piHistSmooth[i] = iSmooth / (2 * iWidth + 1);
     }
 }
 /***************************************************************************************************/
@@ -343,12 +349,15 @@ static void icvGradientOfHistogram256(const ArrayContainer& piHist, ArrayContain
 static void icvBinarizationHistogramBased(Mat & img)
 {
     CV_Assert(img.channels() == 1 && img.depth() == CV_8U);
+
     int iCols = img.cols;
     int iRows = img.rows;
     int iMaxPix = iCols*iRows;
     int iMaxPix1 = iMaxPix/100;
-    const int iNumBins = 256;
-    const int iMaxPos = 20;
+
+    int const iNumBins = 256;
+    int const iMaxPos = 20;
+
     cv::AutoBuffer<int, 256> piHistIntensity(iNumBins);
     cv::AutoBuffer<int, 256> piHistSmooth(iNumBins);
     cv::AutoBuffer<int, 256> piHistGrad(iNumBins);
@@ -483,8 +492,7 @@ static void icvBinarizationHistogramBased(Mat & img)
     }
 }
 
-bool findChessboardCorners(InputArray image_, Size pattern_size,
-                           OutputArray corners_, int flags)
+bool findChessboardCorners(InputArray image_, Size pattern_size, OutputArray corners_, int flags)
 {
     CV_INSTRUMENT_REGION();
 
@@ -493,8 +501,8 @@ bool findChessboardCorners(InputArray image_, Size pattern_size,
 
     bool found = false;
 
-    const int min_dilations = 0;
-    const int max_dilations = 7;
+    int const min_dilations = 0;
+    int const max_dilations = 7;
 
     int type = image_.type(), depth = CV_MAT_DEPTH(type), cn = CV_MAT_CN(type);
     Mat img = image_.getMat();

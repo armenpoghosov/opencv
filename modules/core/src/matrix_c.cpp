@@ -145,23 +145,26 @@ static Mat iplImageToMat(const IplImage* img, bool copyData)
     return m;
 }
 
-Mat cvarrToMat(const CvArr* arr, bool copyData,
-               bool /*allowND*/, int coiMode, AutoBuffer<double>* abuf )
+Mat cvarrToMat(CvArr const* arr, bool copyData, bool /*allowND*/, int coiMode, AutoBuffer<double>* abuf)
 {
-    if( !arr )
+    if (!arr)
         return Mat();
-    if( CV_IS_MAT_HDR_Z(arr) )
+
+    if (CV_IS_MAT_HDR_Z(arr))
         return cvMatToMat((const CvMat*)arr, copyData);
-    if( CV_IS_MATND(arr) )
-        return cvMatNDToMat((const CvMatND*)arr, copyData );
-    if( CV_IS_IMAGE(arr) )
+
+    if (CV_IS_MATND(arr))
+        return cvMatNDToMat((const CvMatND*)arr, copyData);
+
+    if (CV_IS_IMAGE(arr))
     {
         const IplImage* iplimg = (const IplImage*)arr;
         if( coiMode == 0 && iplimg->roi && iplimg->roi->coi > 0 )
             CV_Error(CV_BadCOI, "COI is not supported by the function");
         return iplImageToMat(iplimg, copyData);
     }
-    if( CV_IS_SEQ(arr) )
+
+    if (CV_IS_SEQ(arr))
     {
         CvSeq* seq = (CvSeq*)arr;
         int total = seq->total, type = CV_MAT_TYPE(seq->flags), esz = seq->elem_size;

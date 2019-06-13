@@ -258,7 +258,9 @@ bool CvLevMarq::updateAlt( const CvMat*& _param, CvMat*& _JtJ, CvMat*& _JtErr, d
     return true;
 }
 
-namespace {
+namespace
+{
+
 static void subMatrix(const cv::Mat& src, cv::Mat& dst, const std::vector<uchar>& cols,
                       const std::vector<uchar>& rows) {
     int nonzeros_cols = cv::countNonZero(cols);
@@ -289,19 +291,22 @@ static void subMatrix(const cv::Mat& src, cv::Mat& dst, const std::vector<uchar>
 void CvLevMarq::step()
 {
     using namespace cv;
-    const double LOG10 = log(10.);
-    double lambda = exp(lambdaLg10*LOG10);
+
+    double const LOG10 = log(10.);
+
+    double lambda = exp(lambdaLg10 * LOG10);
     int nparams = param->rows;
 
     Mat _JtJ = cvarrToMat(JtJ);
     Mat _mask = cvarrToMat(mask);
 
     int nparams_nz = countNonZero(_mask);
-    if(!JtJN || JtJN->rows != nparams_nz) {
+    if (!JtJN || JtJN->rows != nparams_nz)
+    {
         // prevent re-allocation in every step
-        JtJN.reset(cvCreateMat( nparams_nz, nparams_nz, CV_64F ));
-        JtJV.reset(cvCreateMat( nparams_nz, 1, CV_64F ));
-        JtJW.reset(cvCreateMat( nparams_nz, 1, CV_64F ));
+        JtJN.reset(cvCreateMat(nparams_nz, nparams_nz, CV_64F));
+        JtJV.reset(cvCreateMat(nparams_nz, 1, CV_64F));
+        JtJW.reset(cvCreateMat(nparams_nz, 1, CV_64F));
     }
 
     Mat _JtJN = cvarrToMat(JtJN);

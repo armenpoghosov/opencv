@@ -57,13 +57,13 @@ static void help()
         "                              #  of board views actually available)\n"
         "     [-d=<delay>]             # a minimum delay in ms between subsequent attempts to capture a next view\n"
         "                              # (used only for video capturing)\n"
-        "     [-s=<squareSize>]       # square size in some user-defined units (1 by default)\n"
+        "     [-s=<squareSize>]        # square size in some user-defined units (1 by default)\n"
         "     [-o=<out_camera_params>] # the output filename for intrinsic [and extrinsic] parameters\n"
         "     [-op]                    # write detected feature points\n"
         "     [-oe]                    # write extrinsic parameters\n"
         "     [-oo]                    # write refined 3D object points\n"
         "     [-zt]                    # assume zero tangential distortion\n"
-        "     [-a=<aspectRatio>]      # fix aspect ratio (fx/fy)\n"
+        "     [-a=<aspectRatio>]       # fix aspect ratio (fx/fy)\n"
         "     [-p]                     # fix the principal point at the center\n"
         "     [-v]                     # flip the captured images around the horizontal axis\n"
         "     [-V]                     # use a video file, and not an image list, uses\n"
@@ -125,45 +125,43 @@ static double computeReprojectionErrors(
     return std::sqrt(totalErr/totalPoints);
 }
 
-static void calcChessboardCorners(Size boardSize, float squareSize, vector<Point3f>& corners, Pattern patternType = CHESSBOARD)
+static void calcChessboardCorners(Size boardSize, float squareSize,
+    vector<Point3f>& corners, Pattern patternType = CHESSBOARD)
 {
     corners.resize(0);
 
     switch(patternType)
     {
-      case CHESSBOARD:
-      case CIRCLES_GRID:
-        for( int i = 0; i < boardSize.height; i++ )
-            for( int j = 0; j < boardSize.width; j++ )
-                corners.push_back(Point3f(float(j*squareSize),
-                                          float(i*squareSize), 0));
-        break;
-
-      case ASYMMETRIC_CIRCLES_GRID:
-        for( int i = 0; i < boardSize.height; i++ )
-            for( int j = 0; j < boardSize.width; j++ )
-                corners.push_back(Point3f(float((2*j + i % 2)*squareSize),
-                                          float(i*squareSize), 0));
-        break;
-
-      default:
+    case CHESSBOARD:
+    case CIRCLES_GRID:
+    {
+        for (int i = 0; i < boardSize.height; ++i)
+            for (int j = 0; j < boardSize.width; ++j)
+                corners.push_back(Point3f(float(j * squareSize), float(i * squareSize), 0));
+    }
+    break;
+    case ASYMMETRIC_CIRCLES_GRID:
+    {
+        for (int i = 0; i < boardSize.height; ++i)
+            for (int j = 0; j < boardSize.width; ++j)
+                corners.push_back(Point3f(float((2 * j + i % 2) * squareSize), float(i * squareSize), 0));
+    }
+    break;
+    default:
         CV_Error(Error::StsBadArg, "Unknown pattern type\n");
     }
 }
 
-static bool runCalibration( vector<vector<Point2f> > imagePoints,
-                    Size imageSize, Size boardSize, Pattern patternType,
-                    float squareSize, float aspectRatio,
-                    float grid_width, bool release_object,
-                    int flags, Mat& cameraMatrix, Mat& distCoeffs,
-                    vector<Mat>& rvecs, vector<Mat>& tvecs,
-                    vector<float>& reprojErrs,
-                    vector<Point3f>& newObjPoints,
-                    double& totalAvgErr)
+static bool runCalibration(vector<vector<Point2f> > imagePoints,
+    Size imageSize, Size boardSize, Pattern patternType,
+    float squareSize, float aspectRatio, float grid_width, bool release_object,
+    int flags, Mat& cameraMatrix, Mat& distCoeffs, vector<Mat>& rvecs, vector<Mat>& tvecs,
+    vector<float>& reprojErrs, vector<Point3f>& newObjPoints, double& totalAvgErr)
 {
     cameraMatrix = Mat::eye(3, 3, CV_64F);
-    if( flags & CALIB_FIX_ASPECT_RATIO )
-        cameraMatrix.at<double>(0,0) = aspectRatio;
+
+    if ( flags & CALIB_FIX_ASPECT_RATIO )
+        cameraMatrix.at<double>(0, 0) = aspectRatio;
 
     distCoeffs = Mat::zeros(8, 1, CV_64F);
 
@@ -172,20 +170,22 @@ static bool runCalibration( vector<vector<Point2f> > imagePoints,
     objectPoints[0][boardSize.width - 1].x = objectPoints[0][0].x + grid_width;
     newObjPoints = objectPoints[0];
 
-    objectPoints.resize(imagePoints.size(),objectPoints[0]);
+    objectPoints.resize(imagePoints.size(), objectPoints[0]);
 
     double rms;
     int iFixedPoint = -1;
     if (release_object)
         iFixedPoint = boardSize.width - 1;
+
     rms = calibrateCameraRO(objectPoints, imagePoints, imageSize, iFixedPoint,
-                            cameraMatrix, distCoeffs, rvecs, tvecs, newObjPoints,
-                            flags | CALIB_FIX_K3 | CALIB_USE_LU);
+        cameraMatrix, distCoeffs, rvecs, tvecs, newObjPoints, flags | CALIB_FIX_K3 | CALIB_USE_LU);
+    
     printf("RMS error reported by calibrateCamera: %g\n", rms);
 
     bool ok = checkRange(cameraMatrix) && checkRange(distCoeffs);
 
-    if (release_object) {
+    if (release_object)
+    {
         cout << "New board corners: " << endl;
         cout << newObjPoints[0] << endl;
         cout << newObjPoints[boardSize.width - 1] << endl;
@@ -195,8 +195,9 @@ static bool runCalibration( vector<vector<Point2f> > imagePoints,
 
     objectPoints.clear();
     objectPoints.resize(imagePoints.size(), newObjPoints);
+
     totalAvgErr = computeReprojectionErrors(objectPoints, imagePoints,
-                rvecs, tvecs, cameraMatrix, distCoeffs, reprojErrs);
+        rvecs, tvecs, cameraMatrix, distCoeffs, reprojErrs);
 
     return ok;
 }
@@ -324,21 +325,21 @@ static bool readStringList( const string& filename, vector<string>& l )
 }
 
 
-static bool runAndSave(const string& outputFilename,
-                const vector<vector<Point2f> >& imagePoints,
-                Size imageSize, Size boardSize, Pattern patternType, float squareSize,
-                float grid_width, bool release_object,
-                float aspectRatio, int flags, Mat& cameraMatrix,
-                Mat& distCoeffs, bool writeExtrinsics, bool writePoints, bool writeGrid )
+static bool runAndSave(string const& outputFilename,
+    vector<vector<Point2f> > const& imagePoints, Size imageSize, Size boardSize,
+    Pattern patternType, float squareSize, float grid_width, bool release_object,
+    float aspectRatio, int flags, Mat& cameraMatrix, Mat& distCoeffs,
+    bool writeExtrinsics, bool writePoints, bool writeGrid)
 {
     vector<Mat> rvecs, tvecs;
     vector<float> reprojErrs;
     double totalAvgErr = 0;
     vector<Point3f> newObjPoints;
 
-    bool ok = runCalibration(imagePoints, imageSize, boardSize, patternType, squareSize,
-                   aspectRatio, grid_width, release_object, flags, cameraMatrix, distCoeffs,
-                   rvecs, tvecs, reprojErrs, newObjPoints, totalAvgErr);
+    bool ok = runCalibration(imagePoints, imageSize, boardSize, patternType,
+        squareSize, aspectRatio, grid_width, release_object, flags, cameraMatrix,
+        distCoeffs, rvecs, tvecs, reprojErrs, newObjPoints, totalAvgErr);
+
     printf("%s. avg reprojection error = %.7f\n",
            ok ? "Calibration succeeded" : "Calibration failed",
            totalAvgErr);
@@ -528,23 +529,23 @@ int main( int argc, char** argv )
         imageSize = view.size();
 
         if (flipVertical)
-            flip( view, view, 0 );
+            flip(view, view, 0);
 
         vector<Point2f> pointbuf;
         cvtColor(view, viewGray, COLOR_BGR2GRAY);
 
         bool found;
-        switch( pattern )
+        switch (pattern)
         {
         case CHESSBOARD:
-            found = findChessboardCorners( view, boardSize, pointbuf,
+            found = findChessboardCorners(viewGray, boardSize, pointbuf,
                 CALIB_CB_ADAPTIVE_THRESH | CALIB_CB_FAST_CHECK | CALIB_CB_NORMALIZE_IMAGE);
         break;
         case CIRCLES_GRID:
-            found = findCirclesGrid( view, boardSize, pointbuf );
+            found = findCirclesGrid(view, boardSize, pointbuf);
         break;
         case ASYMMETRIC_CIRCLES_GRID:
-            found = findCirclesGrid( view, boardSize, pointbuf, CALIB_CB_ASYMMETRIC_GRID );
+            found = findCirclesGrid(view, boardSize, pointbuf, CALIB_CB_ASYMMETRIC_GRID);
         break;
         default:
         return fprintf( stderr, "Unknown pattern type\n" ), -1;
@@ -553,7 +554,7 @@ int main( int argc, char** argv )
        // improve the found corners' coordinate accuracy
         if (pattern == CHESSBOARD && found)
             cornerSubPix(viewGray, pointbuf, Size(winSize, winSize),
-                Size(-1,-1), TermCriteria( TermCriteria::EPS + TermCriteria::COUNT, 30, 0.0001 ));
+                Size(-1,-1), TermCriteria(TermCriteria::EPS + TermCriteria::COUNT, 30, 0.0001));
 
         if (mode == CAPTURING && found &&
             (!capture.isOpened() || clock() - prevTimestamp > delay * 1e-3 * CLOCKS_PER_SEC))
@@ -564,29 +565,28 @@ int main( int argc, char** argv )
         }
 
         if (found)
-            drawChessboardCorners( view, boardSize, Mat(pointbuf), found );
+            drawChessboardCorners(view, boardSize, Mat(pointbuf), found);
 
-        string msg = mode == CAPTURING ? "100/100" :
-            mode == CALIBRATED ? "Calibrated" : "Press 'g' to start";
+        string msg = mode == CAPTURING ? "100/100" : mode == CALIBRATED ? "Calibrated" : "Press 'g' to start";
+
         int baseLine = 0;
         Size textSize = getTextSize(msg, 1, 1, 1, &baseLine);
         Point textOrigin(view.cols - 2*textSize.width - 10, view.rows - 2*baseLine - 10);
 
-        if( mode == CAPTURING )
+        if (mode == CAPTURING)
         {
-            if(undistortImage)
+            if (undistortImage)
                 msg = format( "%d/%d Undist", (int)imagePoints.size(), nframes );
             else
                 msg = format( "%d/%d", (int)imagePoints.size(), nframes );
         }
 
-        putText( view, msg, textOrigin, 1, 1,
-                 mode != CALIBRATED ? Scalar(0,0,255) : Scalar(0,255,0));
+        putText(view, msg, textOrigin, 1, 1, mode != CALIBRATED ? Scalar(0,0,255) : Scalar(0,255,0));
 
-        if( blink )
+        if (blink)
             bitwise_not(view, view);
 
-        if( mode == CALIBRATED && undistortImage )
+        if (mode == CALIBRATED && undistortImage)
         {
             Mat temp = view.clone();
             undistort(temp, view, cameraMatrix, distCoeffs);
@@ -595,49 +595,51 @@ int main( int argc, char** argv )
         imshow("Image View", view);
         char key = (char)waitKey(capture.isOpened() ? 50 : 500);
 
-        if( key == 27 )
+        if (key == 27)
             break;
 
-        if( key == 'u' && mode == CALIBRATED )
+        if (key == 'u' && mode == CALIBRATED)
             undistortImage = !undistortImage;
 
-        if( capture.isOpened() && key == 'g' )
+        if (capture.isOpened() && key == 'g')
         {
             mode = CAPTURING;
             imagePoints.clear();
         }
 
-        if( mode == CAPTURING && imagePoints.size() >= (unsigned)nframes )
+        if (mode == CAPTURING && imagePoints.size() >= (unsigned)nframes)
         {
-            if( runAndSave(outputFilename, imagePoints, imageSize,
-                       boardSize, pattern, squareSize, grid_width, release_object, aspectRatio,
-                       flags, cameraMatrix, distCoeffs,
-                       writeExtrinsics, writePoints, writeGrid))
+            if (runAndSave(outputFilename, imagePoints, imageSize,
+                    boardSize, pattern, squareSize, grid_width, release_object, aspectRatio,
+                    flags, cameraMatrix, distCoeffs, writeExtrinsics, writePoints, writeGrid))
                 mode = CALIBRATED;
             else
                 mode = DETECTION;
-            if( !capture.isOpened() )
+
+            if (!capture.isOpened())
                 break;
         }
     }
 
-    if( !capture.isOpened() && showUndistorted )
+    if (!capture.isOpened() && showUndistorted)
     {
         Mat view, rview, map1, map2;
         initUndistortRectifyMap(cameraMatrix, distCoeffs, Mat(),
-                                getOptimalNewCameraMatrix(cameraMatrix, distCoeffs, imageSize, 1, imageSize, 0),
-                                imageSize, CV_16SC2, map1, map2);
+            getOptimalNewCameraMatrix(cameraMatrix, distCoeffs, imageSize, 1, imageSize, 0),
+            imageSize, CV_16SC2, map1, map2);
 
-        for( i = 0; i < (int)imageList.size(); i++ )
+        for (i = 0; i < (int)imageList.size(); i++)
         {
             view = imread(imageList[i], 1);
-            if(view.empty())
+            if (view.empty())
                 continue;
+
             //undistort( view, rview, cameraMatrix, distCoeffs, cameraMatrix );
             remap(view, rview, map1, map2, INTER_LINEAR);
             imshow("Image View", rview);
+
             char c = (char)waitKey();
-            if( c == 27 || c == 'q' || c == 'Q' )
+            if (c == 27 || c == 'q' || c == 'Q')
                 break;
         }
     }

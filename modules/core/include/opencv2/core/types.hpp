@@ -852,18 +852,21 @@ be fully initialized using the advanced variant of the constructor.
 class CV_EXPORTS TermCriteria
 {
 public:
+
     /**
       Criteria type, can be one of: COUNT, EPS or COUNT + EPS
     */
+
     enum Type
     {
-        COUNT=1, //!< the maximum number of iterations or elements to compute
-        MAX_ITER=COUNT, //!< ditto
-        EPS=2 //!< the desired accuracy or change in parameters at which the iterative algorithm stops
+        COUNT       = 1, //!< the maximum number of iterations or elements to compute
+        MAX_ITER    = COUNT, //!< ditto
+        EPS         = 2 //!< the desired accuracy or change in parameters at which the iterative algorithm stops
     };
 
     //! default constructor
     TermCriteria();
+
     /**
     @param type The type of termination criteria, one of TermCriteria::Type
     @param maxCount The maximum number of iterations or elements to compute.
@@ -873,14 +876,14 @@ public:
 
     inline bool isValid() const
     {
-        const bool isCount = (type & COUNT) && maxCount > 0;
-        const bool isEps = (type & EPS) && !cvIsNaN(epsilon);
+        bool const isCount = (type & COUNT) != 0 && maxCount > 0;
+        bool const isEps = (type & EPS) != 0 && !cvIsNaN(epsilon);
         return isCount || isEps;
     }
 
-    int type; //!< the type of termination criteria: COUNT, EPS or COUNT + EPS
-    int maxCount; //!< the maximum number of iterations/elements
-    double epsilon; //!< the desired accuracy
+    int     type; //!< the type of termination criteria: COUNT, EPS or COUNT + EPS
+    int     maxCount; //!< the maximum number of iterations/elements
+    double  epsilon; //!< the desired accuracy
 };
 
 

@@ -717,9 +717,9 @@ size_t _InputArray::total(int i) const
 {
     _InputArray::KindFlag k = kind();
 
-    if( k == MAT )
+    if (k == MAT)
     {
-        CV_Assert( i < 0 );
+        CV_Assert(i < 0);
         return ((const Mat*)obj)->total();
     }
 

@@ -336,7 +336,8 @@ CV_IMPL int cvRANSACUpdateNumIters( double p, double ep, int modelPoints, int ma
 CV_IMPL int cvFindHomography(CvMat const* _src, CvMat const* _dst, CvMat* __H,
     int method, double ransacReprojThreshold, CvMat* _mask, int maxIters, double confidence)
 {
-    cv::Mat src = cv::cvarrToMat(_src), dst = cv::cvarrToMat(_dst);
+    cv::Mat src = cv::cvarrToMat(_src);
+    cv::Mat dst = cv::cvarrToMat(_dst);
 
     if (src.channels() == 1 && (src.rows == 2 || src.rows == 3) && src.cols > 3)
         cv::transpose(src, src);

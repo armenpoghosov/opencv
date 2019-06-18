@@ -62,10 +62,12 @@ namespace cv
 class HomographyEstimatorCallback CV_FINAL : public PointSetRegistrator::Callback
 {
 public:
-    bool checkSubset( InputArray _ms1, InputArray _ms2, int count ) const CV_OVERRIDE
+
+    bool checkSubset(InputArray _ms1, InputArray _ms2, int count) const CV_OVERRIDE
     {
         Mat ms1 = _ms1.getMat(), ms2 = _ms2.getMat();
-        if( haveCollinearPoints(ms1, count) || haveCollinearPoints(ms2, count) )
+
+        if (haveCollinearPoints(ms1, count) || haveCollinearPoints(ms2, count))
             return false;
 
         // We check whether the minimal set of points for the homography estimation
@@ -79,20 +81,30 @@ public:
         // Pablo Marquez-Neila, Javier Lopez-Alberca, Jose M. Buenaposada, Luis Baumela
         if( count == 4 )
         {
-            static const int tt[][3] = {{0, 1, 2}, {1, 2, 3}, {0, 2, 3}, {0, 1, 3}};
-            const Point2f* src = ms1.ptr<Point2f>();
-            const Point2f* dst = ms2.ptr<Point2f>();
+            static const int tt[][3] =
+            {
+                { 0, 1, 2 },
+                { 1, 2, 3 },
+                { 0, 2, 3 },
+                { 0, 1, 3 }
+            };
+
+            Point2f const* src = ms1.ptr<Point2f>();
+            Point2f const* dst = ms2.ptr<Point2f>();
+
             int negative = 0;
 
-            for( int i = 0; i < 4; i++ )
+            for (int i = 0; i < 4; ++i)
             {
-                const int* t = tt[i];
+                int const* t = tt[i];
+
                 Matx33d A(src[t[0]].x, src[t[0]].y, 1., src[t[1]].x, src[t[1]].y, 1., src[t[2]].x, src[t[2]].y, 1.);
                 Matx33d B(dst[t[0]].x, dst[t[0]].y, 1., dst[t[1]].x, dst[t[1]].y, 1., dst[t[2]].x, dst[t[2]].y, 1.);
 
-                negative += determinant(A)*determinant(B) < 0;
+                negative += determinant(A) * determinant(B) < 0;
             }
-            if( negative != 0 && negative != 4 )
+
+            if (negative != 0 && negative != 4)
                 return false;
         }
 
@@ -115,23 +127,37 @@ public:
      */
     int runKernel( InputArray _m1, InputArray _m2, OutputArray _model ) const CV_OVERRIDE
     {
-        Mat m1 = _m1.getMat(), m2 = _m2.getMat();
-        int i, count = m1.checkVector(2);
-        const Point2f* M = m1.ptr<Point2f>();
-        const Point2f* m = m2.ptr<Point2f>();
+        Mat m1 = _m1.getMat();
+        Mat m2 = _m2.getMat();
 
-        double LtL[9][9], W[9][1], V[9][9];
-        Mat _LtL( 9, 9, CV_64F, &LtL[0][0] );
-        Mat matW( 9, 1, CV_64F, W );
-        Mat matV( 9, 9, CV_64F, V );
-        Mat _H0( 3, 3, CV_64F, V[8] );
-        Mat _Htemp( 3, 3, CV_64F, V[7] );
-        Point2d cM(0,0), cm(0,0), sM(0,0), sm(0,0);
+        int i;
+        int count = m1.checkVector(2);
 
-        for( i = 0; i < count; i++ )
+        Point2f const* M = m1.ptr<Point2f>();
+        Point2f const* m = m2.ptr<Point2f>();
+
+        double LtL[9][9];
+        Mat _LtL(9, 9, CV_64F, &LtL[0][0]);
+
+        double W[9][1];
+        Mat matW(9, 1, CV_64F, W);
+
+        double V[9][9];
+        Mat matV(9, 9, CV_64F, V);
+        Mat _H0(3, 3, CV_64F, V[8]);
+        Mat _Htemp(3, 3, CV_64F, V[7]);
+
+        Point2d cM(0, 0);
+        Point2d cm(0, 0);
+        Point2d sM(0, 0);
+        Point2d sm(0, 0);
+
+        for (i = 0; i < count; ++i)
         {
-            cm.x += m[i].x; cm.y += m[i].y;
-            cM.x += M[i].x; cM.y += M[i].y;
+            cm.x += m[i].x;
+            cm.y += m[i].y;
+            cM.x += M[i].x;
+            cM.y += M[i].y;
         }
 
         cm.x /= count;
@@ -139,7 +165,7 @@ public:
         cM.x /= count;
         cM.y /= count;
 
-        for( i = 0; i < count; i++ )
+        for (i = 0; i < count; ++i)
         {
             sm.x += fabs(m[i].x - cm.x);
             sm.y += fabs(m[i].y - cm.y);
@@ -147,24 +173,31 @@ public:
             sM.y += fabs(M[i].y - cM.y);
         }
 
-        if( fabs(sm.x) < DBL_EPSILON || fabs(sm.y) < DBL_EPSILON ||
-            fabs(sM.x) < DBL_EPSILON || fabs(sM.y) < DBL_EPSILON )
+        if (fabs(sm.x) < DBL_EPSILON || fabs(sm.y) < DBL_EPSILON ||
+            fabs(sM.x) < DBL_EPSILON || fabs(sM.y) < DBL_EPSILON)
             return 0;
-        sm.x = count/sm.x; sm.y = count/sm.y;
-        sM.x = count/sM.x; sM.y = count/sM.y;
 
-        double invHnorm[9] = { 1./sm.x, 0, cm.x, 0, 1./sm.y, cm.y, 0, 0, 1 };
-        double Hnorm2[9] = { sM.x, 0, -cM.x*sM.x, 0, sM.y, -cM.y*sM.y, 0, 0, 1 };
-        Mat _invHnorm( 3, 3, CV_64FC1, invHnorm );
+        sm.x = count / sm.x;
+        sm.y = count / sm.y;
+        sM.x = count / sM.x;
+        sM.y = count / sM.y;
+
+        double invHnorm[9] = { 1. / sm.x, 0, cm.x, 0, 1. / sm.y, cm.y, 0, 0, 1 };
+        Mat _invHnorm(3, 3, CV_64FC1, invHnorm);
+
+        double Hnorm2[9] = { sM.x, 0, -cM.x * sM.x, 0, sM.y, -cM.y * sM.y, 0, 0, 1 };
         Mat _Hnorm2( 3, 3, CV_64FC1, Hnorm2 );
 
         _LtL.setTo(Scalar::all(0));
-        for( i = 0; i < count; i++ )
+
+        for (i = 0; i < count; ++i)
         {
             double x = (m[i].x - cm.x)*sm.x, y = (m[i].y - cm.y)*sm.y;
             double X = (M[i].x - cM.x)*sM.x, Y = (M[i].y - cM.y)*sM.y;
+
             double Lx[] = { X, Y, 1, 0, 0, 0, -x*X, -x*Y, -x };
             double Ly[] = { 0, 0, 0, X, Y, 1, -y*X, -y*Y, -y };
+
             int j, k;
             for( j = 0; j < 9; j++ )
                 for( k = j; k < 9; k++ )
@@ -173,8 +206,9 @@ public:
         completeSymm( _LtL );
 
         eigen( _LtL, matW, matV );
-        _Htemp = _invHnorm*_H0;
-        _H0 = _Htemp*_Hnorm2;
+        _Htemp = _invHnorm * _H0;
+        _H0 = _Htemp * _Hnorm2;
+
         _H0.convertTo(_model, _H0.type(), 1./_H0.at<double>(2,2) );
 
         return 1;
@@ -190,22 +224,39 @@ public:
      */
     void computeError( InputArray _m1, InputArray _m2, InputArray _model, OutputArray _err ) const CV_OVERRIDE
     {
-        Mat m1 = _m1.getMat(), m2 = _m2.getMat(), model = _model.getMat();
-        int i, count = m1.checkVector(2);
-        const Point2f* M = m1.ptr<Point2f>();
-        const Point2f* m = m2.ptr<Point2f>();
-        const double* H = model.ptr<double>();
-        float Hf[] = { (float)H[0], (float)H[1], (float)H[2], (float)H[3], (float)H[4], (float)H[5], (float)H[6], (float)H[7] };
+        Mat m1 = _m1.getMat();
+        int count = m1.checkVector(2);
+        Point2f const* M = m1.ptr<Point2f>();
+
+        Mat m2 = _m2.getMat();
+        Point2f const* m = m2.ptr<Point2f>();
+
+        Mat model = _model.getMat();
+        double const* H = model.ptr<double>();
+
+        float Hf[] =
+        {
+            (float)H[0],
+            (float)H[1],
+            (float)H[2],
+            (float)H[3],
+            (float)H[4],
+            (float)H[5],
+            (float)H[6],
+            (float)H[7]
+        };
 
         _err.create(count, 1, CV_32F);
         float* err = _err.getMat().ptr<float>();
 
-        for( i = 0; i < count; i++ )
+        for (int i = 0; i < count; i++ )
         {
-            float ww = 1.f/(Hf[6]*M[i].x + Hf[7]*M[i].y + 1.f);
-            float dx = (Hf[0]*M[i].x + Hf[1]*M[i].y + Hf[2])*ww - m[i].x;
-            float dy = (Hf[3]*M[i].x + Hf[4]*M[i].y + Hf[5])*ww - m[i].y;
-            err[i] = dx*dx + dy*dy;
+            float const ww = 1.f / (Hf[6] * M[i].x + Hf[7] * M[i].y + 1.f);
+
+            float const dx = (Hf[0] * M[i].x + Hf[1] * M[i].y + Hf[2]) * ww - m[i].x;
+            float const dy = (Hf[3] * M[i].x + Hf[4] * M[i].y + Hf[5]) * ww - m[i].y;
+
+            err[i] = dx * dx + dy * dy;
         }
     }
 };
@@ -347,39 +398,46 @@ static bool createAndRunRHORegistrator(double confidence,
 }
 
 
-cv::Mat cv::findHomography( InputArray _points1, InputArray _points2,
-                            int method, double ransacReprojThreshold, OutputArray _mask,
-                            const int maxIters, const double confidence)
+cv::Mat cv::findHomography(InputArray _points1, InputArray _points2,
+    int method, double ransacReprojThreshold, OutputArray _mask,
+    const int maxIters, const double confidence)
 {
     CV_INSTRUMENT_REGION();
 
-    const double defaultRANSACReprojThreshold = 3;
+    double const defaultRANSACReprojThreshold = 3;
+
     bool result = false;
 
-    Mat points1 = _points1.getMat(), points2 = _points2.getMat();
+    Mat points1 = _points1.getMat();
+    Mat points2 = _points2.getMat();
+
     Mat src, dst, H, tempMask;
     int npoints = -1;
 
-    for( int i = 1; i <= 2; i++ )
+    for (int i = 1; i <= 2; ++i)
     {
         Mat& p = i == 1 ? points1 : points2;
         Mat& m = i == 1 ? src : dst;
+
         npoints = p.checkVector(2, -1, false);
-        if( npoints < 0 )
+        if (npoints < 0)
         {
             npoints = p.checkVector(3, -1, false);
-            if( npoints < 0 )
+            if (npoints < 0)
                 CV_Error(Error::StsBadArg, "The input arrays should be 2D or 3D point sets");
-            if( npoints == 0 )
+
+            if (npoints == 0)
                 return Mat();
+
             convertPointsFromHomogeneous(p, p);
         }
+
         p.reshape(2, npoints).convertTo(m, CV_32F);
     }
 
     CV_Assert( src.checkVector(2) == dst.checkVector(2) );
 
-    if( ransacReprojThreshold <= 0 )
+    if (ransacReprojThreshold <= 0)
         ransacReprojThreshold = defaultRANSACReprojThreshold;
 
     Ptr<PointSetRegistrator::Callback> cb = makePtr<HomographyEstimatorCallback>();

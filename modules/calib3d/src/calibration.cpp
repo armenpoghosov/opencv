@@ -1416,9 +1416,10 @@ static double cvCalibrateCamera2Internal(
     double reprojErr = 0;
 
     Matx33d A;
-    double k[14] = { 0 };
     CvMat matA = cvMat(3, 3, CV_64F, A.val);
+
     CvMat _k;
+    double k[14] = { 0 };
 
     int i;
     int nimages;

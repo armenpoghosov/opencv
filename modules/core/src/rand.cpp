@@ -44,7 +44,8 @@
 //
 //  Filling CvMat/IplImage instances with random numbers
 //
-// */
+//
+*/
 
 #include "precomp.hpp"
 
@@ -72,7 +73,7 @@ randBits_( T* arr, int len, uint64* state, const Vec2i* p, bool small_flag )
     uint64 temp = *state;
     int i;
 
-    if( !small_flag )
+    if (!small_flag)
     {
         for( i = 0; i <= len - 4; i += 4 )
         {
@@ -198,11 +199,13 @@ randf_64f( double* arr, int len, uint64* state, const Vec2d* p, void*, bool )
 static void randf_16f( float16_t* arr, int len, uint64* state, const Vec2f* p, float* fbuf, bool )
 {
     uint64 temp = *state;
-    for( int i = 0; i < len; i++ )
+
+    for (int i = 0; i < len; ++i)
     {
         float f = (float)(int)(temp = RNG_NEXT(temp));
-        fbuf[i] = f*p[i][0];
+        fbuf[i] = f * p[i][0];
     }
+
     *state = temp;
 
     // add bias separately to make the generated random numbers

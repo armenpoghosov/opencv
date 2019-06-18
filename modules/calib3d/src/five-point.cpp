@@ -37,6 +37,7 @@ namespace cv
 class EMEstimatorCallback CV_FINAL : public PointSetRegistrator::Callback
 {
 public:
+
     int runKernel( InputArray _m1, InputArray _m2, OutputArray _model ) const CV_OVERRIDE
     {
         Mat q1 = _m1.getMat(), q2 = _m2.getMat();
@@ -146,10 +147,12 @@ public:
     }
 
 protected:
+
     void getCoeffMat(double *e, double *A) const
     {
         double ep2[36], ep3[36];
-        for (int i = 0; i < 36; i++)
+
+        for (int i = 0; i < 36; ++i)
         {
             ep2[i] = e[i] * e[i];
             ep3[i] = ep2[i] * e[i];
@@ -357,25 +360,33 @@ protected:
         A[113]=-1.*e[31]*e[20]*e[2]-1.*e[31]*e[18]*e[0]+e[31]*e[23]*e[5]-1.*e[31]*e[24]*e[6]+e[7]*e[30]*e[24]+e[7]*e[21]*e[33]+e[7]*e[32]*e[26]+e[7]*e[23]*e[35]+e[25]*e[30]*e[6]+e[25]*e[3]*e[33]+e[25]*e[31]*e[7]+e[25]*e[4]*e[34]+e[25]*e[32]*e[8]+e[25]*e[5]*e[35]+e[34]*e[21]*e[6]+e[34]*e[3]*e[24]+e[34]*e[22]*e[7]+e[34]*e[23]*e[8]+e[34]*e[5]*e[26]+e[1]*e[27]*e[21]+e[1]*e[18]*e[30]+e[1]*e[28]*e[22]+e[1]*e[19]*e[31]+e[1]*e[29]*e[23]+e[1]*e[20]*e[32]+e[19]*e[27]*e[3]+e[19]*e[0]*e[30]+e[19]*e[28]*e[4]+e[19]*e[29]*e[5]+e[19]*e[2]*e[32]+e[28]*e[18]*e[3]+e[28]*e[0]*e[21]+e[28]*e[20]*e[5]+e[28]*e[2]*e[23]+e[4]*e[30]*e[21]+3.*e[4]*e[31]*e[22]+e[4]*e[32]*e[23]-1.*e[4]*e[27]*e[18]-1.*e[4]*e[33]*e[24]-1.*e[4]*e[29]*e[20]-1.*e[4]*e[35]*e[26]-1.*e[22]*e[27]*e[0]+e[22]*e[32]*e[5]-1.*e[22]*e[33]*e[6]+e[22]*e[30]*e[3]-1.*e[22]*e[35]*e[8]-1.*e[22]*e[29]*e[2]+e[31]*e[21]*e[3]-1.*e[31]*e[26]*e[8];
 
         int perm[20] = {6, 8, 18, 15, 12, 5, 14, 7, 4, 11, 19, 13, 1, 16, 17, 3, 10, 9, 2, 0};
+
         double AA[200];
-        for (int i = 0; i < 20; i++)
+
+        for (int i = 0; i < 20; ++i)
         {
-            for (int j = 0; j < 10; j++) AA[i + j * 20] = A[perm[i] + j * 20];
+            for (int j = 0; j < 10; ++j)
+            {
+                AA[i + j * 20] = A[perm[i] + j * 20];
+            }
         }
 
-        for (int i = 0; i < 200; i++)
+        for (int i = 0; i < 200; ++i)
         {
             A[i] = AA[i];
         }
     }
-
-
-    void computeError( InputArray _m1, InputArray _m2, InputArray _model, OutputArray _err ) const CV_OVERRIDE
+    
+    void computeError(InputArray _m1, InputArray _m2, InputArray _model, OutputArray _err) const CV_OVERRIDE
     {
-        Mat X1 = _m1.getMat(), X2 = _m2.getMat(), model = _model.getMat();
+        Mat X1 = _m1.getMat();
         const Point2d* x1ptr = X1.ptr<Point2d>();
-        const Point2d* x2ptr = X2.ptr<Point2d>();
         int n = X1.checkVector(2);
+
+        Mat X2 = _m2.getMat();
+        const Point2d* x2ptr = X2.ptr<Point2d>();
+
+        Mat model = _model.getMat();
         Matx33d E(model.ptr<double>());
 
         _err.create(n, 1, CV_32F);
@@ -385,14 +396,15 @@ protected:
         {
             Vec3d x1(x1ptr[i].x, x1ptr[i].y, 1.);
             Vec3d x2(x2ptr[i].x, x2ptr[i].y, 1.);
+
             Vec3d Ex1 = E * x1;
             Vec3d Etx2 = E.t() * x2;
-            double x2tEx1 = x2.dot(Ex1);
+            double const x2tEx1 = x2.dot(Ex1);
 
-            double a = Ex1[0] * Ex1[0];
-            double b = Ex1[1] * Ex1[1];
-            double c = Etx2[0] * Etx2[0];
-            double d = Etx2[1] * Etx2[1];
+            double const a = Ex1[0] * Ex1[0];
+            double const b = Ex1[1] * Ex1[1];
+            double const c = Etx2[0] * Etx2[0];
+            double const d = Etx2[1] * Etx2[1];
 
             err.at<float>(i) = (float)(x2tEx1 * x2tEx1 / (a + b + c + d));
         }
@@ -402,8 +414,9 @@ protected:
 }
 
 // Input should be a vector of n 2D points or a Nx2 matrix
-cv::Mat cv::findEssentialMat( InputArray _points1, InputArray _points2, InputArray _cameraMatrix,
-                              int method, double prob, double threshold, OutputArray _mask)
+cv::Mat cv::findEssentialMat(
+    InputArray _points1, InputArray _points2, InputArray _cameraMatrix,
+    int method, double prob, double threshold, OutputArray _mask)
 {
     CV_INSTRUMENT_REGION();
 

@@ -192,20 +192,21 @@ public:
 
         for (i = 0; i < count; ++i)
         {
-            double x = (m[i].x - cm.x)*sm.x, y = (m[i].y - cm.y)*sm.y;
-            double X = (M[i].x - cM.x)*sM.x, Y = (M[i].y - cM.y)*sM.y;
+            double x = (m[i].x - cm.x) * sm.x, y = (m[i].y - cm.y) * sm.y;
+            double X = (M[i].x - cM.x) * sM.x, Y = (M[i].y - cM.y) * sM.y;
 
-            double Lx[] = { X, Y, 1, 0, 0, 0, -x*X, -x*Y, -x };
-            double Ly[] = { 0, 0, 0, X, Y, 1, -y*X, -y*Y, -y };
+            double Lx[] = { X, Y, 1, 0, 0, 0, -x * X, -x * Y, -x };
+            double Ly[] = { 0, 0, 0, X, Y, 1, -y * X, -y * Y, -y };
 
-            int j, k;
-            for( j = 0; j < 9; j++ )
-                for( k = j; k < 9; k++ )
-                    LtL[j][k] += Lx[j]*Lx[k] + Ly[j]*Ly[k];
+            for (int j = 0; j < 9; ++j)
+                for(int k = j; k < 9; ++k)
+                    LtL[j][k] += Lx[j] * Lx[k] + Ly[j] * Ly[k];
         }
-        completeSymm( _LtL );
 
-        eigen( _LtL, matW, matV );
+        completeSymm(_LtL);
+
+        eigen(_LtL, matW, matV);
+
         _Htemp = _invHnorm * _H0;
         _H0 = _Htemp * _Hnorm2;
 
@@ -411,7 +412,10 @@ cv::Mat cv::findHomography(InputArray _points1, InputArray _points2,
     Mat points1 = _points1.getMat();
     Mat points2 = _points2.getMat();
 
-    Mat src, dst, H, tempMask;
+    Mat src;
+    Mat dst;
+    Mat H;
+    Mat tempMask;
     int npoints = -1;
 
     for (int i = 1; i <= 2; ++i)
@@ -456,7 +460,7 @@ cv::Mat cv::findHomography(InputArray _points1, InputArray _points2,
     else
         CV_Error(Error::StsBadArg, "Unknown estimation method");
 
-    if( result && npoints > 4 && method != RHO)
+    if (result && npoints > 4 && method != RHO)
     {
         compressElems(src.ptr<Point2f>(), tempMask.ptr<uchar>(), 1, npoints);
 
@@ -477,15 +481,17 @@ cv::Mat cv::findHomography(InputArray _points1, InputArray _points2,
         }
     }
 
-    if( result )
+    if (result)
     {
-        if( _mask.needed() )
+        if (_mask.needed())
             tempMask.copyTo(_mask);
     }
     else
     {
         H.release();
-        if(_mask.needed() ) {
+
+        if (_mask.needed())
+        {
             tempMask = Mat::zeros(npoints >= 0 ? npoints : 0, 1, CV_8U);
             tempMask.copyTo(_mask);
         }

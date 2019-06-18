@@ -226,10 +226,12 @@ namespace cv
 //! @{
 
 //! type of the robust estimation algorithm
-enum { LMEDS  = 4, //!< least-median of squares algorithm
-       RANSAC = 8, //!< RANSAC algorithm
-       RHO    = 16 //!< RHO algorithm
-     };
+enum
+{
+    LMEDS  = 4, //!< least-median of squares algorithm
+    RANSAC = 8, //!< RANSAC algorithm
+    RHO    = 16 //!< RHO algorithm
+};
 
 enum SolvePnPMethod {
     SOLVEPNP_ITERATIVE   = 0,

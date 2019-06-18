@@ -1231,6 +1231,7 @@ void _OutputArray::create(Size _sz, int mtype, int i, bool allowTransposed, _Out
 void _OutputArray::create(int _rows, int _cols, int mtype, int i, bool allowTransposed, _OutputArray::DepthMask fixedDepthMask) const
 {
     _InputArray::KindFlag k = kind();
+
     if( k == MAT && i < 0 && !allowTransposed && fixedDepthMask == 0 )
     {
         CV_Assert(!fixedSize() || ((Mat*)obj)->size.operator()() == Size(_cols, _rows));
@@ -1238,6 +1239,7 @@ void _OutputArray::create(int _rows, int _cols, int mtype, int i, bool allowTran
         ((Mat*)obj)->create(_rows, _cols, mtype);
         return;
     }
+
     if( k == UMAT && i < 0 && !allowTransposed && fixedDepthMask == 0 )
     {
         CV_Assert(!fixedSize() || ((UMat*)obj)->size.operator()() == Size(_cols, _rows));
@@ -1245,6 +1247,7 @@ void _OutputArray::create(int _rows, int _cols, int mtype, int i, bool allowTran
         ((UMat*)obj)->create(_rows, _cols, mtype);
         return;
     }
+
     if( k == CUDA_GPU_MAT && i < 0 && !allowTransposed && fixedDepthMask == 0 )
     {
         CV_Assert(!fixedSize() || ((cuda::GpuMat*)obj)->size() == Size(_cols, _rows));
@@ -1252,20 +1255,23 @@ void _OutputArray::create(int _rows, int _cols, int mtype, int i, bool allowTran
         ((cuda::GpuMat*)obj)->create(_rows, _cols, mtype);
         return;
     }
-    if( k == OPENGL_BUFFER && i < 0 && !allowTransposed && fixedDepthMask == 0 )
+
+    if (k == OPENGL_BUFFER && i < 0 && !allowTransposed && fixedDepthMask == 0)
     {
         CV_Assert(!fixedSize() || ((ogl::Buffer*)obj)->size() == Size(_cols, _rows));
         CV_Assert(!fixedType() || ((ogl::Buffer*)obj)->type() == mtype);
         ((ogl::Buffer*)obj)->create(_rows, _cols, mtype);
         return;
     }
-    if( k == CUDA_HOST_MEM && i < 0 && !allowTransposed && fixedDepthMask == 0 )
+
+    if (k == CUDA_HOST_MEM && i < 0 && !allowTransposed && fixedDepthMask == 0)
     {
         CV_Assert(!fixedSize() || ((cuda::HostMem*)obj)->size() == Size(_cols, _rows));
         CV_Assert(!fixedType() || ((cuda::HostMem*)obj)->type() == mtype);
         ((cuda::HostMem*)obj)->create(_rows, _cols, mtype);
         return;
     }
+
     int sizes[] = {_rows, _cols};
     create(2, sizes, mtype, i, allowTransposed, fixedDepthMask);
 }

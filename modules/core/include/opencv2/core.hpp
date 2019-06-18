@@ -2766,9 +2766,12 @@ introduced by G. Marsaglia and W. W. Tsang.
 class CV_EXPORTS RNG
 {
 public:
-    enum { UNIFORM = 0,
-           NORMAL  = 1
-         };
+
+    enum
+    {
+        UNIFORM = 0,
+        NORMAL  = 1
+    };
 
     /** @brief constructor
 

@@ -83,6 +83,7 @@ public:
     class CV_EXPORTS Callback
     {
     public:
+
         virtual ~Callback()
         {}
 
@@ -98,46 +99,55 @@ public:
     virtual bool run(InputArray m1, InputArray m2, OutputArray model, OutputArray mask) const = 0;
 };
 
-CV_EXPORTS Ptr<PointSetRegistrator> createRANSACPointSetRegistrator(const Ptr<PointSetRegistrator::Callback>& cb,
-                                                                    int modelPoints, double threshold,
-                                                                    double confidence=0.99, int maxIters=1000 );
+CV_EXPORTS Ptr<PointSetRegistrator> createRANSACPointSetRegistrator(
+    Ptr<PointSetRegistrator::Callback> const& cb, int modelPoints, double threshold,
+    double confidence = 0.99, int maxIters = 1000);
 
-CV_EXPORTS Ptr<PointSetRegistrator> createLMeDSPointSetRegistrator(const Ptr<PointSetRegistrator::Callback>& cb,
-                                                                   int modelPoints, double confidence=0.99, int maxIters=1000 );
+CV_EXPORTS Ptr<PointSetRegistrator> createLMeDSPointSetRegistrator(
+    Ptr<PointSetRegistrator::Callback> const& cb, int modelPoints,
+    double confidence = 0.99, int maxIters = 1000);
 
-template<typename T> inline int compressElems( T* ptr, const uchar* mask, int mstep, int count )
+template<typename T>
+inline int compressElems(T* ptr, const uchar* mask, int mstep, int count)
 {
     int i, j;
-    for( i = j = 0; i < count; i++ )
-        if( mask[i*mstep] )
+    for (i = j = 0; i < count; ++i)
+    {
+        if (mask[i*mstep])
         {
-            if( i > j )
+            if (i > j)
                 ptr[j] = ptr[i];
             j++;
         }
+    }
     return j;
 }
 
-static inline bool haveCollinearPoints( const Mat& m, int count )
+static inline bool haveCollinearPoints(const Mat& m, int count)
 {
-    int j, k, i = count-1;
-    const Point2f* ptr = m.ptr<Point2f>();
+    int const i = count - 1;
+    Point2f const* ptr = m.ptr<Point2f>();
 
     // check that the i-th selected point does not belong
     // to a line connecting some previously selected points
     // also checks that points are not too close to each other
-    for( j = 0; j < i; j++ )
+    for (int j = 0; j < i; ++j)
     {
         double dx1 = ptr[j].x - ptr[i].x;
         double dy1 = ptr[j].y - ptr[i].y;
-        for( k = 0; k < j; k++ )
+
+        for (int k = 0; k < j; ++k)
         {
             double dx2 = ptr[k].x - ptr[i].x;
             double dy2 = ptr[k].y - ptr[i].y;
-            if( fabs(dx2*dy1 - dy2*dx1) <= FLT_EPSILON*(fabs(dx1) + fabs(dy1) + fabs(dx2) + fabs(dy2)))
+
+            if (fabs(dx2*dy1 - dy2 * dx1) <= FLT_EPSILON * (fabs(dx1) + fabs(dy1) + fabs(dx2) + fabs(dy2)))
+            {
                 return true;
+            }
         }
     }
+
     return false;
 }
 

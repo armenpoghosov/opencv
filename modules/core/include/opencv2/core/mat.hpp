@@ -788,6 +788,7 @@ including std::sort().
 
 @note Matrix Expressions and arithmetic see MatExpr
 */
+
 class CV_EXPORTS Mat
 {
 public:

@@ -167,8 +167,9 @@ inline _InputArray::~_InputArray() {}
 
 inline Mat _InputArray::getMat(int i) const
 {
-    if( kind() == MAT && i < 0 )
-        return *(const Mat*)obj;
+    if (kind() == MAT && i < 0)
+        return *(Mat const*)obj;
+
     return getMat_(i);
 }
 

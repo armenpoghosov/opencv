@@ -350,10 +350,14 @@ CV_EXPORTS_W void Rodrigues( InputArray src, OutputArray dst, OutputArray jacobi
 class CV_EXPORTS LMSolver : public Algorithm
 {
 public:
+
     class CV_EXPORTS Callback
     {
     public:
-        virtual ~Callback() {}
+
+        virtual ~Callback()
+        {}
+
         /**
          computes error and Jacobian for the specified vector of parameters
 
@@ -388,6 +392,7 @@ public:
        @param maxIters the number of iterations
     */
     virtual void setMaxIters(int maxIters) = 0;
+
     /**
        Retrieves the current maximum number of iterations
     */

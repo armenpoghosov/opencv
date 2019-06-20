@@ -68,7 +68,9 @@ public:
         Mat ms1 = _ms1.getMat(), ms2 = _ms2.getMat();
 
         if (haveCollinearPoints(ms1, count) || haveCollinearPoints(ms2, count))
+        {
             return false;
+        }
 
         // We check whether the minimal set of points for the homography estimation
         // are geometrically consistent. We check if every 3 correspondences sets

@@ -80,39 +80,60 @@ namespace cv
 class LMSolverImpl CV_FINAL : public LMSolver
 {
 public:
-    LMSolverImpl(const Ptr<LMSolver::Callback>& _cb, int _maxIters, double _eps = FLT_EPSILON)
-        : cb(_cb), epsx(_eps), epsf(_eps), maxIters(_maxIters)
+
+    LMSolverImpl(Ptr<LMSolver::Callback> const& _cb, int _maxIters, double _eps = FLT_EPSILON)
+        :
+        cb(_cb),
+        epsx(_eps),
+        epsf(_eps),
+        maxIters(_maxIters)
     {
         printInterval = 0;
     }
 
     int run(InputOutputArray _param0) const CV_OVERRIDE
     {
-        Mat param0 = _param0.getMat(), x, xd, r, rd, J, A, Ap, v, temp_d, d;
+        Mat param0 = _param0.getMat();
         int ptype = param0.type();
+        CV_Assert((param0.cols == 1 || param0.rows == 1) && (ptype == CV_32F || ptype == CV_64F));
 
-        CV_Assert( (param0.cols == 1 || param0.rows == 1) && (ptype == CV_32F || ptype == CV_64F));
-        CV_Assert( cb );
+        CV_Assert(cb);
+
+        Mat x;
+        Mat xd;
+        Mat r;
+        Mat rd;
+        Mat J;
+        Mat A;
+        Mat Ap;
+        Mat v;
+        Mat temp_d;
+        Mat d;
 
         int lx = param0.rows + param0.cols - 1;
         param0.convertTo(x, CV_64F);
 
-        if( x.cols != 1 )
+        if (x.cols != 1)
             transpose(x, x);
 
-        if( !cb->compute(x, r, J) )
+        if (!cb->compute(x, r, J))
             return -1;
-        double S = norm(r, NORM_L2SQR);
+
         int nfJ = 2;
+        double S = norm(r, NORM_L2SQR);
 
         mulTransposed(J, A, true);
         gemm(J, r, 1, noArray(), 0, v, GEMM_1_T);
 
         Mat D = A.diag().clone();
 
-        const double Rlo = 0.25, Rhi = 0.75;
-        double lambda = 1, lc = 0.75;
-        int i, iter = 0;
+        double const Rlo = 0.25;
+        double const Rhi = 0.75;
+
+        double lambda = 1;
+        double lc = 0.75;
+        int i;
+        int iter = 0;
 
         if( printInterval != 0 )
         {
@@ -121,47 +142,59 @@ public:
             printf("************************************************************************************\n");
         }
 
-        for( ;; )
+        for (;;)
         {
             CV_Assert( A.type() == CV_64F && A.rows == lx );
+
             A.copyTo(Ap);
-            for( i = 0; i < lx; i++ )
-                Ap.at<double>(i, i) += lambda*D.at<double>(i);
+
+            for (i = 0; i < lx; ++i)
+                Ap.at<double>(i, i) += lambda * D.at<double>(i);
+
             solve(Ap, v, d, DECOMP_EIG);
             subtract(x, d, xd);
-            if( !cb->compute(xd, rd, noArray()) )
+
+            if (!cb->compute(xd, rd, noArray()))
                 return -1;
+
             nfJ++;
+
             double Sd = norm(rd, NORM_L2SQR);
             gemm(A, d, -1, v, 2, temp_d);
             double dS = d.dot(temp_d);
-            double R = (S - Sd)/(fabs(dS) > DBL_EPSILON ? dS : 1);
+            double R = (S - Sd) / (fabs(dS) > DBL_EPSILON ? dS : 1);
 
-            if( R > Rhi )
+            if (R > Rhi)
             {
                 lambda *= 0.5;
-                if( lambda < lc )
+                if (lambda < lc)
                     lambda = 0;
             }
-            else if( R < Rlo )
+            else if (R < Rlo)
             {
                 // find new nu if R too low
                 double t = d.dot(v);
                 double nu = (Sd - S)/(fabs(t) > DBL_EPSILON ? t : 1) + 2;
+
                 nu = std::min(std::max(nu, 2.), 10.);
-                if( lambda == 0 )
+
+                if (lambda == 0)
                 {
                     invert(A, Ap, DECOMP_EIG);
+
                     double maxval = DBL_EPSILON;
-                    for( i = 0; i < lx; i++ )
+
+                    for (i = 0; i < lx; ++i)
                         maxval = std::max(maxval, std::abs(Ap.at<double>(i,i)));
+
                     lambda = lc = 1./maxval;
                     nu *= 0.5;
                 }
+
                 lambda *= nu;
             }
 
-            if( Sd < S )
+            if (Sd < S)
             {
                 nfJ++;
                 S = Sd;
@@ -175,13 +208,13 @@ public:
             iter++;
             bool proceed = iter < maxIters && norm(d, NORM_INF) >= epsx && norm(r, NORM_INF) >= epsf;
 
-            if( printInterval != 0 && (iter % printInterval == 0 || iter == 1 || !proceed) )
+            if (printInterval != 0 && (iter % printInterval == 0 || iter == 1 || !proceed))
             {
                 printf("%c%10d %10d %15.4e %16.4e %17.4e %16.4e %17.4e\n",
                        (proceed ? ' ' : '*'), iter, nfJ, S, x.at<double>(0), d.at<double>(0), lambda, lc);
             }
 
-            if(!proceed)
+            if (!proceed)
                 break;
         }
 
@@ -189,30 +222,35 @@ public:
             transpose(x, x);
 
         x.convertTo(param0, ptype);
-        if( iter == maxIters )
+        if (iter == maxIters)
             iter = -iter;
 
         return iter;
     }
 
-    void setMaxIters(int iters) CV_OVERRIDE { CV_Assert(iters > 0); maxIters = iters; }
-    int getMaxIters() const CV_OVERRIDE { return maxIters; }
+    void setMaxIters(int iters) CV_OVERRIDE
+    {
+        CV_Assert(iters > 0);
+        maxIters = iters;
+    }
+
+    int getMaxIters() const CV_OVERRIDE
+        { return maxIters; }
 
     Ptr<LMSolver::Callback> cb;
-
-    double epsx;
-    double epsf;
-    int maxIters;
-    int printInterval;
+    double                  epsx;
+    double                  epsf;
+    int                     maxIters;
+    int                     printInterval;
 };
 
 
-Ptr<LMSolver> LMSolver::create(const Ptr<LMSolver::Callback>& cb, int maxIters)
+Ptr<LMSolver> LMSolver::create(Ptr<LMSolver::Callback> const& cb, int maxIters)
 {
     return makePtr<LMSolverImpl>(cb, maxIters);
 }
 
-Ptr<LMSolver> LMSolver::create(const Ptr<LMSolver::Callback>& cb, int maxIters, double eps)
+Ptr<LMSolver> LMSolver::create(Ptr<LMSolver::Callback> const& cb, int maxIters, double eps)
 {
     return makePtr<LMSolverImpl>(cb, maxIters, eps);
 }

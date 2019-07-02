@@ -1040,10 +1040,9 @@ CV_IMPL void cvProjectPoints2( const CvMat* objectPoints,
                               dpdf, dpdc, dpdk, NULL, aspectRatio );
 }
 
-CV_IMPL void cvFindExtrinsicCameraParams2( const CvMat* objectPoints,
-                  const CvMat* imagePoints, const CvMat* A,
-                  const CvMat* distCoeffs, CvMat* rvec, CvMat* tvec,
-                  int useExtrinsicGuess )
+CV_IMPL void cvFindExtrinsicCameraParams2(
+    CvMat const* objectPoints, CvMat const* imagePoints,
+    CvMat const* A, CvMat const* distCoeffs, CvMat* rvec, CvMat* tvec, int useExtrinsicGuess )
 {
     const int max_iter = 20;
     Ptr<CvMat> matM, _Mxy, _m, _mn, matL;
@@ -1326,7 +1325,7 @@ CV_IMPL void cvInitIntrinsicParams2D(CvMat const* objectPoints, CvMat const* ima
         double d1[3];
         double d2[3];
 
-        double n[4] = { 0,0,0,0 };
+        double n[4] = { 0., 0., 0., 0. };
 
         for (int j = 0; j < 3; ++j)
         {
@@ -1594,25 +1593,31 @@ static double cvCalibrateCamera2Internal(
     {
         cvConvert(cameraMatrix, &matA);
 
-        if( A(0, 0) <= 0 || A(1, 1) <= 0 )
+        if (A(0, 0) <= 0 || A(1, 1) <= 0)
             CV_Error( CV_StsOutOfRange, "Focal length (fx and fy) must be positive" );
-        if( A(0, 2) < 0 || A(0, 2) >= imageSize.width ||
-            A(1, 2) < 0 || A(1, 2) >= imageSize.height )
+
+        if (A(0, 2) < 0 || A(0, 2) >= imageSize.width ||
+            A(1, 2) < 0 || A(1, 2) >= imageSize.height)
             CV_Error( CV_StsOutOfRange, "Principal point must be within the image" );
-        if( fabs(A(0, 1)) > 1e-5 )
+
+        if (fabs(A(0, 1)) > 1e-5)
             CV_Error( CV_StsOutOfRange, "Non-zero skew is not supported by the function" );
-        if( fabs(A(1, 0)) > 1e-5 || fabs(A(2, 0)) > 1e-5 ||
-            fabs(A(2, 1)) > 1e-5 || fabs(A(2,2)-1) > 1e-5 )
-            CV_Error( CV_StsOutOfRange,
-                "The intrinsic matrix must have [fx 0 cx; 0 fy cy; 0 0 1] shape" );
-        A(0, 1) = A(1, 0) = A(2, 0) = A(2, 1) = 0.;
+
+        if (fabs(A(1, 0)) > 1e-5 || fabs(A(2, 0)) > 1e-5 ||
+            fabs(A(2, 1)) > 1e-5 || fabs(A(2,2)-1) > 1e-5)
+            CV_Error( CV_StsOutOfRange, "The intrinsic matrix must have [fx 0 cx; 0 fy cy; 0 0 1] shape" );
+
+        A(0, 1) = 0.;
+        A(1, 0) = 0.;
+        A(2, 0) = 0.;
+        A(2, 1) = 0.;
         A(2, 2) = 1.;
 
         if ((flags & CALIB_FIX_ASPECT_RATIO) != 0)
         {
             aspectRatio = A(0, 0) / A(1, 1);
 
-            if( aspectRatio < minValidAspectRatio || aspectRatio > maxValidAspectRatio )
+            if (aspectRatio < minValidAspectRatio || aspectRatio > maxValidAspectRatio)
                 CV_Error( CV_StsOutOfRange,
                     "The specified aspect ratio (= cameraMatrix[0][0] / cameraMatrix[1][1]) is incorrect" );
         }
@@ -1633,8 +1638,8 @@ static double cvCalibrateCamera2Internal(
 
         if ((flags & CALIB_FIX_ASPECT_RATIO) != 0)
         {
-            aspectRatio = cvmGet(cameraMatrix,0,0);
-            aspectRatio /= cvmGet(cameraMatrix,1,1);
+            aspectRatio = cvmGet(cameraMatrix, 0, 0);
+            aspectRatio /= cvmGet(cameraMatrix, 1, 1);
             if( aspectRatio < minValidAspectRatio || aspectRatio > maxValidAspectRatio )
                 CV_Error( CV_StsOutOfRange,
                     "The specified aspect ratio (= cameraMatrix[0][0] / cameraMatrix[1][1]) is incorrect" );
@@ -1650,58 +1655,61 @@ static double cvCalibrateCamera2Internal(
     Mat _Je(maxPoints * 2, 6, CV_64FC1);
     Mat _err(maxPoints * 2, 1, CV_64FC1);
 
-    const bool allocJo = (solver.state == CvLevMarq::CALC_J) || stdDevs;
-    Mat _Jo = allocJo ? Mat( maxPoints*2, maxPoints*3, CV_64FC1, Scalar(0) ) : Mat();
+    bool const allocJo = (solver.state == CvLevMarq::CALC_J) || stdDevs;
+    Mat _Jo = allocJo ? Mat(maxPoints * 2, maxPoints * 3, CV_64FC1, Scalar(0)) : Mat();
 
     if ((flags & CALIB_USE_LU) != 0)
-    {
         solver.solveMethod = DECOMP_LU;
-    }
     else if ((flags & CALIB_USE_QR) != 0)
-    {
         solver.solveMethod = DECOMP_QR;
-    }
 
     {
         double* param = solver.param->data.db;
         uchar* mask = solver.mask->data.ptr;
 
-        param[0] = A(0, 0); param[1] = A(1, 1); param[2] = A(0, 2); param[3] = A(1, 2);
+        param[0] = A(0, 0);
+        param[1] = A(1, 1);
+        param[2] = A(0, 2);
+        param[3] = A(1, 2);
+
         std::copy(k, k + 14, param + 4);
 
         if ((flags & CALIB_FIX_ASPECT_RATIO) != 0)
             mask[0] = 0;
 
-        if (flags & CALIB_FIX_FOCAL_LENGTH)
+        if ((flags & CALIB_FIX_FOCAL_LENGTH) != 0)
             mask[0] = mask[1] = 0;
 
-        if (flags & CALIB_FIX_PRINCIPAL_POINT)
+        if ((flags & CALIB_FIX_PRINCIPAL_POINT) != 0)
             mask[2] = mask[3] = 0;
 
-        if (flags & CALIB_ZERO_TANGENT_DIST)
+        if ((flags & CALIB_ZERO_TANGENT_DIST) != 0)
         {
             param[6] = param[7] = 0;
             mask[6] = mask[7] = 0;
         }
-        if( !(flags & CALIB_RATIONAL_MODEL) )
+
+        if ((flags & CALIB_RATIONAL_MODEL) == 0)
             flags |= CALIB_FIX_K4 + CALIB_FIX_K5 + CALIB_FIX_K6;
-        if( !(flags & CALIB_THIN_PRISM_MODEL))
+
+        if ((flags & CALIB_THIN_PRISM_MODEL) == 0)
             flags |= CALIB_FIX_S1_S2_S3_S4;
+
         if( !(flags & CALIB_TILTED_MODEL))
             flags |= CALIB_FIX_TAUX_TAUY;
 
-        mask[ 4] = !(flags & CALIB_FIX_K1);
-        mask[ 5] = !(flags & CALIB_FIX_K2);
-        if( flags & CALIB_FIX_TANGENT_DIST )
-        {
-          mask[6]  = mask[7]  = 0;
-        }
-        mask[ 8] = !(flags & CALIB_FIX_K3);
-        mask[ 9] = !(flags & CALIB_FIX_K4);
-        mask[10] = !(flags & CALIB_FIX_K5);
-        mask[11] = !(flags & CALIB_FIX_K6);
+        mask[4] = (flags & CALIB_FIX_K1) == 0;
+        mask[5] = (flags & CALIB_FIX_K2) == 0;
 
-        if(flags & CALIB_FIX_S1_S2_S3_S4)
+        if ((flags & CALIB_FIX_TANGENT_DIST) != 0)
+            mask[6]  = mask[7]  = 0;
+
+        mask[8] = (flags & CALIB_FIX_K3) == 0;
+        mask[9] = (flags & CALIB_FIX_K4) == 0;
+        mask[10] = (flags & CALIB_FIX_K5) == 0;
+        mask[11] = (flags & CALIB_FIX_K6) == 0;
+
+        if (flags & CALIB_FIX_S1_S2_S3_S4)
         {
             mask[12] = 0;
             mask[13] = 0;
@@ -1714,11 +1722,10 @@ static double cvCalibrateCamera2Internal(
             mask[17] = 0;
         }
 
-        if(releaseObject)
+        if (releaseObject)
         {
-            // copy object points
-            std::copy( matM.ptr<double>(), matM.ptr<double>( 0, maxPoints - 1 ) + 3,
-                       param + NINTRINSIC + nimages * 6 );
+            std::copy(matM.ptr<double>(), matM.ptr<double>(0, maxPoints - 1) + 3,
+                param + NINTRINSIC + nimages * 6);
             // fix points
             mask[NINTRINSIC + nimages * 6] = 0;
             mask[NINTRINSIC + nimages * 6 + 1] = 0;
@@ -1733,11 +1740,14 @@ static double cvCalibrateCamera2Internal(
     // 2. initialize extrinsic parameters
     for (i = 0, pos = 0; i < nimages; ++i, pos += ni)
     {
-        CvMat _ri, _ti;
+        CvMat _ri;
+        cvGetRows(solver.param, &_ri, NINTRINSIC + i * 6, NINTRINSIC + i * 6 + 3);
+
+        CvMat _ti;
+        cvGetRows(solver.param, &_ti, NINTRINSIC + i * 6 + 3, NINTRINSIC + i * 6 + 6);
+
         ni = npoints->data.i[i * npstep];
 
-        cvGetRows(solver.param, &_ri, NINTRINSIC + i*6, NINTRINSIC + i*6 + 3);
-        cvGetRows(solver.param, &_ti, NINTRINSIC + i*6 + 3, NINTRINSIC + i*6 + 6);
         CvMat _Mi = cvMat(matM.colRange(pos, pos + ni));
         CvMat _mi = cvMat(_m.colRange(pos, pos + ni));
 
@@ -1879,15 +1889,18 @@ static double cvCalibrateCamera2Internal(
                 //detailed description of the variance estimation methods
                 double sigma2 = norm(allErrors, NORM_L2SQR) / (total - nparams_nz);
                 Mat stdDevsM = cvarrToMat(stdDevs);
+
                 int j = 0;
-                for ( int s = 0; s < nparams; s++ )
-                    if( mask.data[s] )
+                for (int s = 0; s < nparams; ++s)
+                {
+                    if (mask.data[s])
                     {
-                        stdDevsM.at<double>(s) = std::sqrt(JtJinv.at<double>(j,j) * sigma2);
+                        stdDevsM.at<double>(s) = std::sqrt(JtJinv.at<double>(j, j) * sigma2);
                         j++;
                     }
                     else
                         stdDevsM.at<double>(s) = 0.;
+                }
             }
 
             break;
@@ -3683,14 +3696,11 @@ cv::Mat cv::initCameraMatrix2D( InputArrayOfArrays objectPoints,
 }
 
 
-
-double cv::calibrateCamera( InputArrayOfArrays _objectPoints,
-                            InputArrayOfArrays _imagePoints,
-                            Size imageSize, InputOutputArray _cameraMatrix, InputOutputArray _distCoeffs,
-                            OutputArrayOfArrays _rvecs, OutputArrayOfArrays _tvecs, int flags, TermCriteria criteria )
+double cv::calibrateCamera(InputArrayOfArrays _objectPoints, InputArrayOfArrays _imagePoints,
+    Size imageSize, InputOutputArray _cameraMatrix, InputOutputArray _distCoeffs,
+    OutputArrayOfArrays _rvecs, OutputArrayOfArrays _tvecs, int flags, TermCriteria criteria)
 {
     CV_INSTRUMENT_REGION();
-
     return calibrateCamera(_objectPoints, _imagePoints, imageSize, _cameraMatrix,
         _distCoeffs, _rvecs, _tvecs, noArray(), noArray(), noArray(), flags, criteria);
 }
@@ -3699,10 +3709,9 @@ double cv::calibrateCamera(InputArrayOfArrays _objectPoints, InputArrayOfArrays 
     Size imageSize, InputOutputArray _cameraMatrix, InputOutputArray _distCoeffs,
     OutputArrayOfArrays _rvecs, OutputArrayOfArrays _tvecs,
     OutputArray stdDeviationsIntrinsics, OutputArray stdDeviationsExtrinsics,
-    OutputArray _perViewErrors, int flags, TermCriteria criteria )
+    OutputArray _perViewErrors, int flags, TermCriteria criteria)
 {
     CV_INSTRUMENT_REGION();
-
     return calibrateCameraRO(_objectPoints, _imagePoints, imageSize, -1, _cameraMatrix, _distCoeffs,
                              _rvecs, _tvecs, noArray(), stdDeviationsIntrinsics, stdDeviationsExtrinsics,
                              noArray(), _perViewErrors, flags, criteria);

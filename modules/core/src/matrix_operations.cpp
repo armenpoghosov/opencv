@@ -543,23 +543,32 @@ void cv::transpose( InputArray _src, OutputArray _dst )
 
 ////////////////////////////////////// completeSymm /////////////////////////////////////////
 
-void cv::completeSymm( InputOutputArray _m, bool LtoR )
+void cv::completeSymm(InputOutputArray _m, bool LtoR)
 {
     CV_INSTRUMENT_REGION();
 
     Mat m = _m.getMat();
-    size_t step = m.step, esz = m.elemSize();
-    CV_Assert( m.dims <= 2 && m.rows == m.cols );
+
+    size_t step = m.step;
+    size_t esz = m.elemSize();
+
+    CV_Assert(m.dims <= 2 && m.rows == m.cols);
 
     int rows = m.rows;
-    int j0 = 0, j1 = rows;
+
+    int j0 = 0;
+    int j1 = rows;
 
     uchar* data = m.ptr();
-    for( int i = 0; i < rows; i++ )
+    for (int i = 0; i < rows; ++i)
     {
-        if( !LtoR ) j1 = i; else j0 = i+1;
-        for( int j = j0; j < j1; j++ )
-            memcpy(data + (i*step + j*esz), data + (j*step + i*esz), esz);
+        if (!LtoR)
+            j1 = i;
+        else
+            j0 = i + 1;
+
+        for (int j = j0; j < j1; ++j)
+            memcpy(data + (i * step + j * esz), data + (j * step + i * esz), esz);
     }
 }
 

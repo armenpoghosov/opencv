@@ -586,27 +586,30 @@ public:
 
     int runKernel( InputArray _m1, InputArray _m2, OutputArray _model ) const CV_OVERRIDE
     {
-        Mat m1 = _m1.getMat(), m2 = _m2.getMat();
-        const Point2f* from = m1.ptr<Point2f>();
-        const Point2f* to   = m2.ptr<Point2f>();
+        Mat m1 = _m1.getMat();
+        Mat m2 = _m2.getMat();
+
+        Point2f const* from = m1.ptr<Point2f>();
+        Point2f const* to   = m2.ptr<Point2f>();
+
         _model.create(2, 3, CV_64F);
         Mat M_mat = _model.getMat();
-        double *M = M_mat.ptr<double>();
+        double* M = M_mat.ptr<double>();
 
         // we need 3 points to estimate affine transform
-        double x1 = from[0].x;
-        double y1 = from[0].y;
-        double x2 = from[1].x;
-        double y2 = from[1].y;
-        double x3 = from[2].x;
-        double y3 = from[2].y;
+        double const x1 = from[0].x;
+        double const y1 = from[0].y;
+        double const x2 = from[1].x;
+        double const y2 = from[1].y;
+        double const x3 = from[2].x;
+        double const y3 = from[2].y;
 
-        double X1 = to[0].x;
-        double Y1 = to[0].y;
-        double X2 = to[1].x;
-        double Y2 = to[1].y;
-        double X3 = to[2].x;
-        double Y3 = to[2].y;
+        double const X1 = to[0].x;
+        double const Y1 = to[0].y;
+        double const X2 = to[1].x;
+        double const Y2 = to[1].y;
+        double const X3 = to[2].x;
+        double const Y3 = to[2].y;
 
         /*
         We want to solve AX = B
@@ -617,6 +620,7 @@ public:
         A = |  0  0  0 x2 y2  1 |
             | x3 y3  1  0  0  0 |
             |  0  0  0 x3 y3  1 |
+
         B = (X1, Y1, X2, Y2, X3, Y3).t()
         X = (a, b, c, d, e, f).t()
 
@@ -632,11 +636,11 @@ public:
         | Y3 |   | x3 y3 1 |   | f |
         */
 
-        double d = 1. / ( x1*(y2-y3) + x2*(y3-y1) + x3*(y1-y2) );
+        double d = 1. / ( x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2) );
 
-        M[0] = d * ( X1*(y2-y3) + X2*(y3-y1) + X3*(y1-y2) );
-        M[1] = d * ( X1*(x3-x2) + X2*(x1-x3) + X3*(x2-x1) );
-        M[2] = d * ( X1*(x2*y3 - x3*y2) + X2*(x3*y1 - x1*y3) + X3*(x1*y2 - x2*y1) );
+        M[0] = d * (X1 * (y2 - y3) + X2*(y3-y1) + X3*(y1-y2) );
+        M[1] = d * (X1 * (x3 - x2) + X2*(x1-x3) + X3*(x2-x1) );
+        M[2] = d * (X1 * (x2 * y3 - x3*y2) + X2*(x3*y1 - x1*y3) + X3*(x1*y2 - x2*y1) );
 
         M[3] = d * ( Y1*(y2-y3) + Y2*(y3-y1) + Y3*(y1-y2) );
         M[4] = d * ( Y1*(x3-x2) + Y2*(x1-x3) + Y3*(x2-x1) );
@@ -873,13 +877,15 @@ int estimateAffine3D(InputArray _from, InputArray _to,
     int count = from.checkVector(3);
     CV_Assert(count >= 0 && to.checkVector(3) == count);
 
-    Mat dFrom, dTo;
+    Mat dFrom;
     from.convertTo(dFrom, CV_32F);
-    to.convertTo(dTo, CV_32F);
     dFrom = dFrom.reshape(3, count);
+
+    Mat dTo;
+    to.convertTo(dTo, CV_32F);
     dTo = dTo.reshape(3, count);
 
-    const double epsilon = DBL_EPSILON;
+    double const epsilon = DBL_EPSILON;
     ransacThreshold = ransacThreshold <= 0 ? 3 : ransacThreshold;
     confidence = (confidence < epsilon) ? 0.99 : (confidence > 1 - epsilon) ? 0.99 : confidence;
 

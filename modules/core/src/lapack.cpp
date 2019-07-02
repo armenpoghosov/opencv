@@ -114,22 +114,27 @@ template<typename _Tp> static inline _Tp hypot(_Tp a, _Tp b)
 template<typename _Tp> bool
 JacobiImpl_( _Tp* A, size_t astep, _Tp* W, _Tp* V, size_t vstep, int n, uchar* buf )
 {
-    const _Tp eps = std::numeric_limits<_Tp>::epsilon();
+    _Tp const eps = std::numeric_limits<_Tp>::epsilon();
+
     int i, j, k, m;
 
     astep /= sizeof(A[0]);
-    if( V )
+
+    if (V != nullptr)
     {
         vstep /= sizeof(V[0]);
-        for( i = 0; i < n; i++ )
+
+        for (i = 0; i < n; ++i)
         {
-            for( j = 0; j < n; j++ )
-                V[i*vstep + j] = (_Tp)0;
-            V[i*vstep + i] = (_Tp)1;
+            for (j = 0; j < n; ++j)
+                V[i * vstep + j] = (_Tp)0;
+
+            V[i * vstep + i] = (_Tp)1;
         }
     }
 
-    int iters, maxIters = n*n*30;
+    int iters;
+    int maxIters = n * n * 30;
 
     int* indR = (int*)alignPtr(buf, sizeof(int));
     int* indC = indR + n;
@@ -148,6 +153,7 @@ JacobiImpl_( _Tp* A, size_t astep, _Tp* W, _Tp* V, size_t vstep, int n, uchar* b
             }
             indR[k] = m;
         }
+
         if( k > 0 )
         {
             for( m = 0, mv = std::abs(A[k]), i = 1; i < k; i++ )
@@ -259,7 +265,7 @@ JacobiImpl_( _Tp* A, size_t astep, _Tp* W, _Tp* V, size_t vstep, int n, uchar* b
     return true;
 }
 
-static bool Jacobi( float* S, size_t sstep, float* e, float* E, size_t estep, int n, uchar* buf )
+static bool Jacobi(float* S, size_t sstep, float* e, float* E, size_t estep, int n, uchar* buf)
 {
     return JacobiImpl_(S, sstep, e, E, estep, n, buf);
 }
@@ -317,8 +323,8 @@ template<> inline int VBLAS<float>::givens(float* a, float* b, int n, float c, f
 }
 
 
-template<> inline int VBLAS<float>::givensx(float* a, float* b, int n, float c, float s,
-                                             float* anorm, float* bnorm) const
+template<>
+inline int VBLAS<float>::givensx(float* a, float* b, int n, float c, float s, float* anorm, float* bnorm) const
 {
     if( n < v_float32::nlanes)
         return 0;
@@ -667,32 +673,43 @@ SVBkSbImpl_( int m, int n, const T* w, int incw,
        T* x, int ldx, double* buffer, T eps )
 {
     double threshold = 0;
-    int udelta0 = uT ? ldu : 1, udelta1 = uT ? 1 : ldu;
-    int vdelta0 = vT ? ldv : 1, vdelta1 = vT ? 1 : ldv;
-    int i, j, nm = std::min(m, n);
 
-    if( !b )
+    int udelta0 = uT ? ldu : 1;
+    int udelta1 = uT ? 1 : ldu;
+
+    int vdelta0 = vT ? ldv : 1;
+    int vdelta1 = vT ? 1 : ldv;
+
+    int i;
+    int j;
+    int nm = std::min(m, n);
+
+    if (!b)
         nb = m;
 
-    for( i = 0; i < n; i++ )
-        for( j = 0; j < nb; j++ )
-            x[i*ldx + j] = 0;
+    for (i = 0; i < n; ++i)
+        for (j = 0; j < nb; ++j)
+            x[i * ldx + j] = 0;
 
-    for( i = 0; i < nm; i++ )
-        threshold += w[i*incw];
+    for (i = 0; i < nm; ++i)
+        threshold += w[i * incw];
+
     threshold *= eps;
 
     // v * inv(w) * uT * b
-    for( i = 0; i < nm; i++, u += udelta0, v += vdelta0 )
+    for (i = 0; i < nm; i++, u += udelta0, v += vdelta0)
     {
-        double wi = w[i*incw];
-        if( (double)std::abs(wi) <= threshold )
-            continue;
-        wi = 1/wi;
+        double wi = w[i * incw];
 
-        if( nb == 1 )
+        if ((double)std::abs(wi) <= threshold)
+            continue;
+
+        wi = 1 / wi;
+
+        if (nb == 1)
         {
             double s = 0;
+
             if( b )
                 for( j = 0; j < m; j++ )
                     s += u[j*udelta1]*b[j*ldb];
@@ -718,6 +735,7 @@ SVBkSbImpl_( int m, int n, const T* w, int incw,
                 for( j = 0; j < nb; j++ )
                     buffer[j] = u[j*udelta1]*wi;
             }
+
             MatrAXPY( n, nb, buffer, 0, v, vdelta1, x, ldx );
         }
     }
@@ -847,31 +865,33 @@ double cv::invert( InputArray _src, OutputArray _dst, int method )
     CV_INSTRUMENT_REGION();
 
     bool result = false;
+
     Mat src = _src.getMat();
     int type = src.type();
 
     CV_Assert(type == CV_32F || type == CV_64F);
 
     size_t esz = CV_ELEM_SIZE(type);
-    int m = src.rows, n = src.cols;
+    int const m = src.rows;
+    int const n = src.cols;
 
-    if( method == DECOMP_SVD )
+    if (method == DECOMP_SVD)
     {
         int nm = std::min(m, n);
 
-        AutoBuffer<uchar> _buf((m*nm + nm + nm*n)*esz + sizeof(double));
+        AutoBuffer<uchar> _buf((m * nm + nm + nm * n) * esz + sizeof(double));
         uchar* buf = alignPtr((uchar*)_buf.data(), (int)esz);
+
         Mat u(m, nm, type, buf);
         Mat w(nm, 1, type, u.ptr() + m*nm*esz);
         Mat vt(nm, n, type, w.ptr() + nm*esz);
 
         SVD::compute(src, w, u, vt);
         SVD::backSubst(w, u, vt, Mat(), _dst);
+
         return type == CV_32F ?
-            (w.ptr<float>()[0] >= FLT_EPSILON ?
-             w.ptr<float>()[n-1]/w.ptr<float>()[0] : 0) :
-            (w.ptr<double>()[0] >= DBL_EPSILON ?
-             w.ptr<double>()[n-1]/w.ptr<double>()[0] : 0);
+            (w.ptr<float>()[0] >= FLT_EPSILON ? w.ptr<float>()[n - 1] / w.ptr<float>()[0] : 0) :
+            (w.ptr<double>()[0] >= DBL_EPSILON ? w.ptr<double>()[n - 1] / w.ptr<double>()[0] : 0);
     }
 
     CV_Assert( m == n );
@@ -1378,7 +1398,7 @@ bool cv::solve( InputArray _src, InputArray _src2arg, OutputArray _dst, int meth
 
 /////////////////// finding eigenvalues and eigenvectors of a symmetric matrix ///////////////
 
-bool cv::eigen( InputArray _src, OutputArray _evals, OutputArray _evects )
+bool cv::eigen(InputArray _src, OutputArray _evals, OutputArray _evects)
 {
     CV_INSTRUMENT_REGION();
 
@@ -1397,8 +1417,8 @@ bool cv::eigen( InputArray _src, OutputArray _evals, OutputArray _evects )
     }
 
 #ifdef HAVE_EIGEN
-    const bool evecNeeded = _evects.needed();
-    const int esOptions = evecNeeded ? Eigen::ComputeEigenvectors : Eigen::EigenvaluesOnly;
+    bool const evecNeeded = _evects.needed();
+    int const esOptions = evecNeeded ? Eigen::ComputeEigenvectors : Eigen::EigenvaluesOnly;
     _evals.create(n, 1, type);
     cv::Mat evals = _evals.getMat();
     if ( type == CV_64F )
@@ -1416,9 +1436,13 @@ bool cv::eigen( InputArray _src, OutputArray _evals, OutputArray _evects )
                 cv::Mat evects = _evects.getMat();
                 cv::eigen2cv(es.eigenvectors().rowwise().reverse().transpose().eval(), v);
             }
+
             return true;
         }
-    } else { // CV_32F
+    }
+    else
+    {
+        // CV_32F
         Eigen::MatrixXf src_eig, zeros_eig;
         cv::cv2eigen(src, src_eig);
 
@@ -1437,17 +1461,25 @@ bool cv::eigen( InputArray _src, OutputArray _evals, OutputArray _evects )
     return false;
 #else
 
-    size_t elemSize = src.elemSize(), astep = alignSize(n*elemSize, 16);
-    AutoBuffer<uchar> buf(n*astep + n*5*elemSize + 32);
+    size_t elemSize = src.elemSize();
+    size_t astep = alignSize( n *elemSize, 16);
+
+    AutoBuffer<uchar> buf(n * astep + n * 5 * elemSize + 32);
     uchar* ptr = alignPtr(buf.data(), 16);
-    Mat a(n, n, type, ptr, astep), w(n, 1, type, ptr + astep*n);
-    ptr += astep*n + elemSize*n;
+
+    Mat a(n, n, type, ptr, astep);
+    Mat w(n, 1, type, ptr + astep * n);
+
+    ptr += astep *n + elemSize*n;
+
     src.copyTo(a);
-    bool ok = type == CV_32F ?
+
+    bool const ok = type == CV_32F ?
         Jacobi(a.ptr<float>(), a.step, w.ptr<float>(), v.ptr<float>(), v.step, n, ptr) :
         Jacobi(a.ptr<double>(), a.step, w.ptr<double>(), v.ptr<double>(), v.step, n, ptr);
 
     w.copyTo(_evals);
+
     return ok;
 #endif
 }

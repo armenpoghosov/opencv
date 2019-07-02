@@ -127,34 +127,20 @@ public:
      *            2 columns 1 channel
      * @param _model, CV_64FC1, 3x3, normalized, i.e., the last element is 1
      */
-    int runKernel( InputArray _m1, InputArray _m2, OutputArray _model ) const CV_OVERRIDE
+    int runKernel(InputArray _m1, InputArray _m2, OutputArray _model) const CV_OVERRIDE
     {
         Mat m1 = _m1.getMat();
-        Mat m2 = _m2.getMat();
-
-        int i;
-        int count = m1.checkVector(2);
-
         Point2f const* M = m1.ptr<Point2f>();
+
+        Mat m2 = _m2.getMat();
         Point2f const* m = m2.ptr<Point2f>();
-
-        double LtL[9][9];
-        Mat _LtL(9, 9, CV_64F, &LtL[0][0]);
-
-        double W[9][1];
-        Mat matW(9, 1, CV_64F, W);
-
-        double V[9][9];
-        Mat matV(9, 9, CV_64F, V);
-        Mat _H0(3, 3, CV_64F, V[8]);
-        Mat _Htemp(3, 3, CV_64F, V[7]);
 
         Point2d cM(0, 0);
         Point2d cm(0, 0);
-        Point2d sM(0, 0);
-        Point2d sm(0, 0);
 
-        for (i = 0; i < count; ++i)
+        int const count = m1.checkVector(2);
+
+        for (int i = 0; i < count; ++i)
         {
             cm.x += m[i].x;
             cm.y += m[i].y;
@@ -167,7 +153,10 @@ public:
         cM.x /= count;
         cM.y /= count;
 
-        for (i = 0; i < count; ++i)
+        Point2d sM(0, 0);
+        Point2d sm(0, 0);
+
+        for (int i = 0; i < count; ++i)
         {
             sm.x += fabs(m[i].x - cm.x);
             sm.y += fabs(m[i].y - cm.y);
@@ -184,35 +173,49 @@ public:
         sM.x = count / sM.x;
         sM.y = count / sM.y;
 
-        double invHnorm[9] = { 1. / sm.x, 0, cm.x, 0, 1. / sm.y, cm.y, 0, 0, 1 };
-        Mat _invHnorm(3, 3, CV_64FC1, invHnorm);
-
-        double Hnorm2[9] = { sM.x, 0, -cM.x * sM.x, 0, sM.y, -cM.y * sM.y, 0, 0, 1 };
-        Mat _Hnorm2( 3, 3, CV_64FC1, Hnorm2 );
-
+        double LtL[9][9];
+        Mat _LtL(9, 9, CV_64F, &LtL[0][0]);
         _LtL.setTo(Scalar::all(0));
 
-        for (i = 0; i < count; ++i)
+        for (int i = 0; i < count; ++i)
         {
-            double x = (m[i].x - cm.x) * sm.x, y = (m[i].y - cm.y) * sm.y;
-            double X = (M[i].x - cM.x) * sM.x, Y = (M[i].y - cM.y) * sM.y;
+            double const x = (m[i].x - cm.x) * sm.x;
+            double const y = (m[i].y - cm.y) * sm.y;
 
-            double Lx[] = { X, Y, 1, 0, 0, 0, -x * X, -x * Y, -x };
-            double Ly[] = { 0, 0, 0, X, Y, 1, -y * X, -y * Y, -y };
+            double const X = (M[i].x - cM.x) * sM.x;
+            double const Y = (M[i].y - cM.y) * sM.y;
+
+            double const Lx[] = { X, Y, 1, 0, 0, 0, -x * X, -x * Y, -x };
+            double const Ly[] = { 0, 0, 0, X, Y, 1, -y * X, -y * Y, -y };
 
             for (int j = 0; j < 9; ++j)
-                for(int k = j; k < 9; ++k)
+                for (int k = j; k < 9; ++k)
                     LtL[j][k] += Lx[j] * Lx[k] + Ly[j] * Ly[k];
         }
 
         completeSymm(_LtL);
 
+        double W[9][1];
+        Mat matW(9, 1, CV_64F, W);
+
+        double V[9][9];
+        Mat matV(9, 9, CV_64F, V);
+
         eigen(_LtL, matW, matV);
+
+        Mat _H0(3, 3, CV_64F, V[8]);
+        Mat _Htemp(3, 3, CV_64F, V[7]);
+
+        double invHnorm[9] = { 1. / sm.x, 0, cm.x, 0, 1. / sm.y, cm.y, 0, 0, 1 };
+        Mat _invHnorm(3, 3, CV_64FC1, invHnorm);
+
+        double Hnorm2[9] = { sM.x, 0, -cM.x * sM.x, 0, sM.y, -cM.y * sM.y, 0, 0, 1 };
+        Mat _Hnorm2(3, 3, CV_64FC1, Hnorm2);
 
         _Htemp = _invHnorm * _H0;
         _H0 = _Htemp * _Hnorm2;
 
-        _H0.convertTo(_model, _H0.type(), 1./_H0.at<double>(2,2) );
+        _H0.convertTo(_model, _H0.type(), 1. / _H0.at<double>(2, 2));
 
         return 1;
     }
@@ -225,10 +228,9 @@ public:
      * @param _model CV_64FC1, 3x3
      * @param _err, output, CV_32FC1, square of the L2 norm
      */
-    void computeError( InputArray _m1, InputArray _m2, InputArray _model, OutputArray _err ) const CV_OVERRIDE
+    void computeError(InputArray _m1, InputArray _m2, InputArray _model, OutputArray _err) const CV_OVERRIDE
     {
         Mat m1 = _m1.getMat();
-        int count = m1.checkVector(2);
         Point2f const* M = m1.ptr<Point2f>();
 
         Mat m2 = _m2.getMat();
@@ -237,7 +239,7 @@ public:
         Mat model = _model.getMat();
         double const* H = model.ptr<double>();
 
-        float Hf[] =
+        float const Hf[] =
         {
             (float)H[0],
             (float)H[1],
@@ -249,6 +251,7 @@ public:
             (float)H[7]
         };
 
+        int count = m1.checkVector(2);
         _err.create(count, 1, CV_32F);
         float* err = _err.getMat().ptr<float>();
 
@@ -264,10 +267,10 @@ public:
     }
 };
 
-
 class HomographyRefineCallback CV_FINAL : public LMSolver::Callback
 {
 public:
+
     HomographyRefineCallback(InputArray _src, InputArray _dst)
     {
         src = _src.getMat();
@@ -276,41 +279,59 @@ public:
 
     bool compute(InputArray _param, OutputArray _err, OutputArray _Jac) const CV_OVERRIDE
     {
-        int i, count = src.checkVector(2);
+        int i;
+        int const count = src.checkVector(2);
         Mat param = _param.getMat();
+
         _err.create(count*2, 1, CV_64F);
+
         Mat err = _err.getMat(), J;
-        if( _Jac.needed())
+        if (_Jac.needed())
         {
             _Jac.create(count*2, param.rows, CV_64F);
             J = _Jac.getMat();
             CV_Assert( J.isContinuous() && J.cols == 8 );
         }
 
-        const Point2f* M = src.ptr<Point2f>();
-        const Point2f* m = dst.ptr<Point2f>();
-        const double* h = param.ptr<double>();
+        Point2f const* M = src.ptr<Point2f>();
+        Point2f const* m = dst.ptr<Point2f>();
+
+        double const* h = param.ptr<double>();
         double* errptr = err.ptr<double>();
         double* Jptr = J.data ? J.ptr<double>() : 0;
 
-        for( i = 0; i < count; i++ )
+        for (i = 0; i < count; ++i)
         {
-            double Mx = M[i].x, My = M[i].y;
-            double ww = h[6]*Mx + h[7]*My + 1.;
-            ww = fabs(ww) > DBL_EPSILON ? 1./ww : 0;
-            double xi = (h[0]*Mx + h[1]*My + h[2])*ww;
-            double yi = (h[3]*Mx + h[4]*My + h[5])*ww;
-            errptr[i*2] = xi - m[i].x;
-            errptr[i*2+1] = yi - m[i].y;
+            double const Mx = M[i].x;
+            double const My = M[i].y;
 
-            if( Jptr )
+            double ww = h[6] * Mx + h[7] * My + 1.;
+            ww = fabs(ww) > DBL_EPSILON ? 1. / ww : 0;
+
+            double const xi = (h[0] * Mx + h[1] * My + h[2]) * ww;
+            double const yi = (h[3] * Mx + h[4] * My + h[5]) * ww;
+
+            errptr[i * 2] = xi - m[i].x;
+            errptr[i * 2 + 1] = yi - m[i].y;
+
+            if (Jptr != nullptr)
             {
-                Jptr[0] = Mx*ww; Jptr[1] = My*ww; Jptr[2] = ww;
-                Jptr[3] = Jptr[4] = Jptr[5] = 0.;
-                Jptr[6] = -Mx*ww*xi; Jptr[7] = -My*ww*xi;
-                Jptr[8] = Jptr[9] = Jptr[10] = 0.;
-                Jptr[11] = Mx*ww; Jptr[12] = My*ww; Jptr[13] = ww;
-                Jptr[14] = -Mx*ww*yi; Jptr[15] = -My*ww*yi;
+                Jptr[0] = Mx * ww;
+                Jptr[1] = My * ww;
+                Jptr[2] = ww;
+                Jptr[3] = 0.;
+                Jptr[4] = 0.;
+                Jptr[5] = 0.;
+                Jptr[6] = -Mx * ww * xi;
+                Jptr[7] = -My * ww * xi;
+                Jptr[8] = 0.;
+                Jptr[9] = 0.;
+                Jptr[10] = 0.;
+                Jptr[11] = Mx * ww;
+                Jptr[12] = My * ww;
+                Jptr[13] = ww;
+                Jptr[14] = -Mx * ww * yi;
+                Jptr[15] = -My * ww * yi;
 
                 Jptr += 16;
             }
@@ -323,10 +344,10 @@ public:
 };
 } // end namesapce cv
 
-namespace cv{
-static bool createAndRunRHORegistrator(double confidence,
-                                       int    maxIters,
-                                       double ransacReprojThreshold,
+namespace cv
+{
+
+static bool createAndRunRHORegistrator(double confidence, int maxIters, double ransacReprojThreshold,
                                        int    npoints,
                                        InputArray  _src,
                                        InputArray  _dst,
@@ -403,7 +424,7 @@ static bool createAndRunRHORegistrator(double confidence,
 
 cv::Mat cv::findHomography(InputArray _points1, InputArray _points2,
     int method, double ransacReprojThreshold, OutputArray _mask,
-    const int maxIters, const double confidence)
+    int const maxIters, double const confidence)
 {
     CV_INSTRUMENT_REGION();
 
@@ -441,7 +462,7 @@ cv::Mat cv::findHomography(InputArray _points1, InputArray _points2,
         p.reshape(2, npoints).convertTo(m, CV_32F);
     }
 
-    CV_Assert( src.checkVector(2) == dst.checkVector(2) );
+    CV_Assert(src.checkVector(2) == dst.checkVector(2));
 
     if (ransacReprojThreshold <= 0)
         ransacReprojThreshold = defaultRANSACReprojThreshold;
@@ -470,9 +491,9 @@ cv::Mat cv::findHomography(InputArray _points1, InputArray _points2,
         if (npoints > 0)
         {
             Mat src1 = src.rowRange(0, npoints);
-            Mat dst1 = dst.rowRange(0, npoints);
-
             src = src1;
+
+            Mat dst1 = dst.rowRange(0, npoints);
             dst = dst1;
 
             if (method == RANSAC || method == LMEDS)
@@ -502,8 +523,8 @@ cv::Mat cv::findHomography(InputArray _points1, InputArray _points2,
     return H;
 }
 
-cv::Mat cv::findHomography( InputArray _points1, InputArray _points2,
-                           OutputArray _mask, int method, double ransacReprojThreshold )
+cv::Mat cv::findHomography(InputArray _points1, InputArray _points2,
+    OutputArray _mask, int method, double ransacReprojThreshold )
 {
     return cv::findHomography(_points1, _points2, method, ransacReprojThreshold, _mask);
 }
@@ -769,28 +790,33 @@ static int run8Point( const Mat& _m1, const Mat& _m2, Mat& _fmatrix )
     return 1;
 }
 
-
 class FMEstimatorCallback CV_FINAL : public PointSetRegistrator::Callback
 {
 public:
+
     bool checkSubset( InputArray _ms1, InputArray _ms2, int count ) const CV_OVERRIDE
     {
-        Mat ms1 = _ms1.getMat(), ms2 = _ms2.getMat();
+        Mat ms1 = _ms1.getMat();
+        Mat ms2 = _ms2.getMat();
+
         return !haveCollinearPoints(ms1, count) && !haveCollinearPoints(ms2, count);
     }
 
-    int runKernel( InputArray _m1, InputArray _m2, OutputArray _model ) const CV_OVERRIDE
+    int runKernel(InputArray _m1, InputArray _m2, OutputArray _model) const CV_OVERRIDE
     {
-        double f[9*3];
-        Mat m1 = _m1.getMat(), m2 = _m2.getMat();
-        int count = m1.checkVector(2);
+        double f[9 * 3];
+
+        Mat m1 = _m1.getMat();
+        Mat m2 = _m2.getMat();
+
+        int const count = m1.checkVector(2);
         Mat F(count == 7 ? 9 : 3, 3, CV_64F, f);
         int n = count == 7 ? run7Point(m1, m2, F) : run8Point(m1, m2, F);
 
-        if( n == 0 )
+        if (n == 0)
             _model.release();
         else
-            F.rowRange(0, n*3).copyTo(_model);
+            F.rowRange(0, n * 3).copyTo(_model);
 
         return n;
     }
@@ -895,16 +921,14 @@ cv::Mat cv::findFundamentalMat( InputArray _points1, InputArray _points2,
     return F;
 }
 
-cv::Mat cv::findFundamentalMat( InputArray _points1, InputArray _points2,
-                               OutputArray _mask, int method,
-                               double ransacReprojThreshold , double confidence)
+cv::Mat cv::findFundamentalMat(InputArray _points1, InputArray _points2,
+    OutputArray _mask, int method, double ransacReprojThreshold , double confidence)
 {
     return cv::findFundamentalMat(_points1, _points2, method, ransacReprojThreshold, confidence, _mask);
 }
 
-
-void cv::computeCorrespondEpilines( InputArray _points, int whichImage,
-                                    InputArray _Fmat, OutputArray _lines )
+void cv::computeCorrespondEpilines(InputArray _points, int whichImage,
+    InputArray _Fmat, OutputArray _lines)
 {
     CV_INSTRUMENT_REGION();
 
@@ -979,51 +1003,63 @@ void cv::computeCorrespondEpilines( InputArray _points, int whichImage,
     }
 }
 
-static inline double scaleFor(double x){
-    return (std::fabs(x) > std::numeric_limits<float>::epsilon()) ? 1./x : 1.;
-}
-static inline float scaleFor(float x){
-    return (std::fabs(x) > std::numeric_limits<float>::epsilon()) ? 1.f/x : 1.f;
+static inline double scaleFor(double x)
+{
+    return (std::fabs(x) > std::numeric_limits<float>::epsilon()) ? 1. / x : 1.;
 }
 
+static inline float scaleFor(float x)
+{
+    return (std::fabs(x) > std::numeric_limits<float>::epsilon()) ? 1.f / x : 1.f;
+}
 
-void cv::convertPointsFromHomogeneous( InputArray _src, OutputArray _dst )
+void cv::convertPointsFromHomogeneous(InputArray _src, OutputArray _dst)
 {
     CV_INSTRUMENT_REGION();
 
     Mat src = _src.getMat();
-    if( !src.isContinuous() )
+
+    if (!src.isContinuous())
         src = src.clone();
-    int i, npoints = src.checkVector(3), depth = src.depth(), cn = 3;
-    if( npoints < 0 )
+
+    int cn = 3;
+
+    int npoints = src.checkVector(3);
+    if (npoints < 0)
     {
         npoints = src.checkVector(4);
         CV_Assert(npoints >= 0);
         cn = 4;
     }
-    CV_Assert( npoints >= 0 && (depth == CV_32S || depth == CV_32F || depth == CV_64F));
 
-    int dtype = CV_MAKETYPE(depth <= CV_32F ? CV_32F : CV_64F, cn-1);
+    int depth = src.depth();
+    CV_Assert(npoints >= 0 && (depth == CV_32S || depth == CV_32F || depth == CV_64F));
+
+    int i;
+
+    int dtype = CV_MAKETYPE(depth <= CV_32F ? CV_32F : CV_64F, cn - 1);
     _dst.create(npoints, 1, dtype);
     Mat dst = _dst.getMat();
-    if( !dst.isContinuous() )
+
+    if (!dst.isContinuous())
     {
         _dst.release();
         _dst.create(npoints, 1, dtype);
         dst = _dst.getMat();
     }
-    CV_Assert( dst.isContinuous() );
 
-    if( depth == CV_32S )
+    CV_Assert(dst.isContinuous());
+
+    if (depth == CV_32S)
     {
-        if( cn == 3 )
+        if (cn == 3)
         {
             const Point3i* sptr = src.ptr<Point3i>();
             Point2f* dptr = dst.ptr<Point2f>();
             for( i = 0; i < npoints; i++ )
             {
-                float scale = sptr[i].z != 0 ? 1.f/sptr[i].z : 1.f;
-                dptr[i] = Point2f(sptr[i].x*scale, sptr[i].y*scale);
+                float scale = sptr[i].z != 0 ? 1.f / sptr[i].z : 1.f;
+                dptr[i] = Point2f(sptr[i].x * scale, sptr[i].y * scale);
             }
         }
         else

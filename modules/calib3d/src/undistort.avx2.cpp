@@ -165,6 +165,7 @@ int initUndistortRectifyMapLine_AVX(float* m1f, float* m2f, short* m1, ushort* m
             __m128i __iv = _mm256_cvtpd_epi32(__v);
 
             static const __m128i __INTER_TAB_SIZE_m1 = _mm_set1_epi32(INTER_TAB_SIZE - 1);
+
             __m128i __m2 = _mm_add_epi32(
                 _mm_mullo_epi32(_mm_and_si128(__iv, __INTER_TAB_SIZE_m1), _mm_set1_epi32(INTER_TAB_SIZE)),
                 _mm_and_si128(__iu, __INTER_TAB_SIZE_m1));

@@ -66,14 +66,16 @@ cv::Mat cv::getDefaultNewCameraMatrix( InputArray _cameraMatrix, Size imgsize,
 class initUndistortRectifyMapComputer : public cv::ParallelLoopBody
 {
 public:
+
     initUndistortRectifyMapComputer(
-        cv::Size _size, cv::Mat &_map1, cv::Mat &_map2, int _m1type,
-        const double* _ir, cv::Matx33d &_matTilt,
-        double _u0, double _v0, double _fx, double _fy,
-        double _k1, double _k2, double _p1, double _p2,
-        double _k3, double _k4, double _k5, double _k6,
-        double _s1, double _s2, double _s3, double _s4)
-      : size(_size),
+            cv::Size _size, cv::Mat &_map1, cv::Mat &_map2, int _m1type,
+            const double* _ir, cv::Matx33d &_matTilt,
+            double _u0, double _v0, double _fx, double _fy,
+            double _k1, double _k2, double _p1, double _p2,
+            double _k3, double _k4, double _k5, double _k6,
+            double _s1, double _s2, double _s3, double _s4)
+        :
+        size(_size),
         map1(_map1),
         map2(_map2),
         m1type(_m1type),
@@ -94,13 +96,14 @@ public:
         s1(_s1),
         s2(_s2),
         s3(_s3),
-        s4(_s4) {
+        s4(_s4)
+    {
 #if CV_TRY_AVX2
         useAVX2 = cv::checkHardwareSupport(CV_CPU_AVX2);
 #endif
     }
 
-    void operator()( const cv::Range& range ) const CV_OVERRIDE
+    void operator () (cv::Range const& range) const CV_OVERRIDE
     {
         const int begin = range.start;
         const int end = range.end;

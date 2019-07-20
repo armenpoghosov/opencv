@@ -136,8 +136,8 @@ TEST_P(Test_TensorFlow_layers, Convolution3D)
 #if defined(INF_ENGINE_RELEASE) && INF_ENGINE_VER_MAJOR_LT(2019010000)
     throw SkipTestException("Test is enabled starts from 2019R1");
 #endif
-    if (backend != DNN_BACKEND_INFERENCE_ENGINE || target != DNN_TARGET_CPU)
-            throw SkipTestException("Only DLIE backend on CPU is supported");
+    if (target != DNN_TARGET_CPU)
+        throw SkipTestException("Only CPU is supported");
     runTensorFlowNet("conv3d");
 }
 
@@ -218,6 +218,13 @@ TEST_P(Test_TensorFlow_layers, pooling)
     runTensorFlowNet("reduce_mean");  // an average pooling over all spatial dimensions.
 }
 
+TEST_P(Test_TensorFlow_layers, max_pool_grad)
+{
+    if (backend == DNN_BACKEND_INFERENCE_ENGINE)
+        applyTestTag(CV_TEST_TAG_DNN_SKIP_IE);
+    runTensorFlowNet("max_pool_grad");
+}
+
 // TODO: fix tests and replace to pooling
 TEST_P(Test_TensorFlow_layers, ave_pool_same)
 {
@@ -236,8 +243,8 @@ TEST_P(Test_TensorFlow_layers, MaxPooling3D)
 #if defined(INF_ENGINE_RELEASE) && INF_ENGINE_VER_MAJOR_LT(2019010000)
     throw SkipTestException("Test is enabled starts from 2019R1");
 #endif
-    if (backend != DNN_BACKEND_INFERENCE_ENGINE || target != DNN_TARGET_CPU)
-        throw SkipTestException("Only DLIE backend on CPU is supported");
+    if (target != DNN_TARGET_CPU)
+        throw SkipTestException("Only CPU is supported");
     runTensorFlowNet("max_pool3d");
 }
 
@@ -246,8 +253,8 @@ TEST_P(Test_TensorFlow_layers, AvePooling3D)
 #if defined(INF_ENGINE_RELEASE) && INF_ENGINE_VER_MAJOR_LT(2019010000)
     throw SkipTestException("Test is enabled starts from 2019R1");
 #endif
-    if (backend != DNN_BACKEND_INFERENCE_ENGINE || target != DNN_TARGET_CPU)
-        throw SkipTestException("Only DLIE backend on CPU is supported");
+    if (target != DNN_TARGET_CPU)
+        throw SkipTestException("Only CPU is supported");
     runTensorFlowNet("ave_pool3d");
 }
 
@@ -341,6 +348,11 @@ TEST_P(Test_TensorFlow_layers, l2_normalize_3d)
 #endif
 
     runTensorFlowNet("l2_normalize_3d");
+}
+
+TEST_P(Test_TensorFlow_layers, Split)
+{
+    runTensorFlowNet("split");
 }
 
 class Test_TensorFlow_nets : public DNNTestLayer {};
